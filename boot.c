@@ -2,6 +2,7 @@
 #include <util/delay.h>
 #include "m48_hal.h"
 #include "boot.h"
+#include "enc.h"
 
 static void enable_ext_irq();
 static void enable_pcint18();
@@ -23,6 +24,7 @@ aaps_result_t boot(void)
         enable_pcint18();
         enable_pcint0();
     }
+    enc_init();
     spi_init();
     aaps_result_t ret = AAPS_RET_OK;
     /*
@@ -52,7 +54,7 @@ void boot_failed(void)
 }
 static void enable_ext_irq()
 {
-    EICRA |= (1<<ISC01) | (1<<ISC10);        //IRQ on falling edge
+    EICRA |= (1<<ISC01) | (1<<ISC11);        //IRQ on falling edge
     EIMSK |= (1<<INT0) | (1<<INT1);
 }
 

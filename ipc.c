@@ -8,6 +8,7 @@
 #include "cmd_exec.h"
 #include "ipc.h"
 #include "m48_hal.h"
+#include "enc.h"
 
 #define SPI_WAIT() while(!(SPSR & (1<<SPIF)))
 
@@ -17,6 +18,7 @@ volatile uint8_t write_ptr = 0;
 volatile uint8_t read_ptr = 0;
 volatile uint8_t packets_available = 0;
 char sendbuffer[40] = {0};
+
 
 ISR(SPI_STC_vect)
 {
@@ -44,6 +46,15 @@ static void ipc_save_packet(struct ipc_packet_t *dst, size_t len, uint8_t read_p
     packets_available--;
 }
 
+void send_ipc_enc(uint16_t enc_value)
+{
+    sendbuffer[0] = IPC_DATA_ENC;
+    sendbuffer[1] = (enc_value >> 8);
+    sendbuffer[2] = (enc_value & 0xff);
+    sendbuffer[3] = '\0';
+    print_ipc(sendbuffer, 4);
+}
+
 aaps_result_t ipc_handle_packet(struct ipc_packet_t *ipc_packet)
 {
     /* TODO: Make exec functions return status */
@@ -55,8 +66,11 @@ aaps_result_t ipc_handle_packet(struct ipc_packet_t *ipc_packet)
     switch(ipc_packet->cmd)
     {
         case IPC_CMD_PERIPH_DETECT:
-            print_ipc("[G] P detect\n");
-            break;
+        {
+            const char str[] = "[G] P detect\n";
+            print_ipc(str, strlen(str));
+          break;
+        }
         case IPC_CMD_SET_RELAY_D:
             cmd_exec_ctrl_relay(ipc_packet, RELAY_D_ID);
             break;
@@ -91,18 +105,21 @@ void print_ipc_int(const char *str, unsigned int integer)
     memset(sendbuffer + 1 + str_len + buf_len, '\n', 1);
     memset(sendbuffer + 1 + str_len + buf_len + 1, 0, 1);
 
-    print_ipc(sendbuffer);
+    /*
+     * TODO: Fix this temporary solution:
+     * Add two bytes for the integer and one
+     * byte for null termination.
+     */
+    print_ipc(sendbuffer, strlen(str) + 3);
 }
-void print_ipc(const char *str)
+void print_ipc(const char *str, size_t len)
 {
     /* TODO: This can't be used standalone
      * if no data type is specified.
      */
 
-    uint8_t len;
     uint8_t i;
     SPCR &= ~(1<<SPIE);
-    len = strlen(str);
 
     /* Put CMD in SPI data buffer */
     SPDR = ~IPC_CMD_DATA_AVAILABLE;

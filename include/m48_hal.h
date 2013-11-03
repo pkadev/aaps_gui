@@ -46,10 +46,10 @@
 
 
 /* IRQ Defines */
-#define IRQ_PORT PORTB
-#define IRQ_DDR DDRB
-#define IRQ_IN PINB
-#define IRQ_PIN 0
+#define IRQ_PORT PORTC
+#define IRQ_DDR DDRC
+#define IRQ_IN PINC
+#define IRQ_PIN 3
 #define IRQ_INIT() (IRQ_DDR|=(1<<IRQ_PIN))
 #define IRQ_SET()  (IRQ_PORT|=(1<<IRQ_PIN))
 #define IRQ_CLR()  (IRQ_PORT&=~(1<<IRQ_PIN))

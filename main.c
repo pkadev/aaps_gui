@@ -1,9 +1,12 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <util/delay.h>
+#include <string.h>
 #include "m48_hal.h"
 #include "boot.h"
 #include "ipc.h"
 #include "cmd_exec.h"
+#include "enc.h"
 
 struct ipc_packet_t ipc_packet = {0};
 
@@ -12,27 +15,26 @@ struct ipc_packet_t ipc_packet = {0};
      * Current ISR context is copy paste from
      * AAPS_A
      */
-ISR(PCINT2_vect) { /*If SW1 is configured as PCINT18 */ }
-ISR(INT1_vect)
-{
-    if (PIND & (1<<PD3))
-        ;//LED_SET();
-    else
-        ;//LED_CLR();
-}
 
 
 int main(void)
 {
+    uint16_t curr_enc_pos;
+
     aaps_result_t result = AAPS_RET_OK;
     if (boot() != AAPS_RET_OK)
         boot_failed();
 
+    curr_enc_pos = get_enc_pos();
+    print_ipc_int("Initial inc_pos: ", curr_enc_pos);
     /*
      * Read channel if from eeprom? Or say hello with type
      * of peripheral?
      */
+    enc_gled_on();
     print_ipc_int("[G] Hi from GUI: ", 1);
+    _delay_ms(500);
+    enc_gled_off();
 
     while(1)
     {
@@ -43,9 +45,16 @@ int main(void)
                 ipc_handle_packet(&ipc_packet);
             }
         } else {
-            print_ipc("[G]Critical error\n");
+            const char str[] = "[G]Critical error\n";
+            print_ipc(str, strlen(str));
             //LED_CLR();
             while(1);
+        }
+        uint16_t new_enc_pos = get_enc_pos();
+        if (curr_enc_pos != new_enc_pos)
+        {
+            curr_enc_pos = new_enc_pos;
+            send_ipc_enc(new_enc_pos);
         }
     }
     return 0; //Should never get here

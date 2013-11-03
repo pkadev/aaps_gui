@@ -63,6 +63,7 @@ SRC = $(TARGET).c
 SRC += boot.c
 SRC += ipc.c
 SRC += cmd_exec.c
+SRC += enc.c
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s
