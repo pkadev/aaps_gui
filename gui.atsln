@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Atmel Studio Solution File, Format Version 11.00
-Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "analog", "analog.cproj", "{B04C9188-7DCC-4358-9B6C-A24E541616D2}"
+# AvrStudio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "gui", "gui.cproj", "{DED49AAA-0A49-408A-9546-56672F413AA6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -9,10 +9,10 @@ Global
 		Release|AVR = Release|AVR
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B04C9188-7DCC-4358-9B6C-A24E541616D2}.Debug|AVR.ActiveCfg = Debug|AVR
-		{B04C9188-7DCC-4358-9B6C-A24E541616D2}.Debug|AVR.Build.0 = Debug|AVR
-		{B04C9188-7DCC-4358-9B6C-A24E541616D2}.Release|AVR.ActiveCfg = Release|AVR
-		{B04C9188-7DCC-4358-9B6C-A24E541616D2}.Release|AVR.Build.0 = Release|AVR
+		{DED49AAA-0A49-408A-9546-56672F413AA6}.Debug|AVR.ActiveCfg = Debug|AVR
+		{DED49AAA-0A49-408A-9546-56672F413AA6}.Debug|AVR.Build.0 = Debug|AVR
+		{DED49AAA-0A49-408A-9546-56672F413AA6}.Release|AVR.ActiveCfg = Release|AVR
+		{DED49AAA-0A49-408A-9546-56672F413AA6}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
