@@ -26,15 +26,11 @@ int main(void)
         boot_failed();
 
     curr_enc_pos = get_enc_pos();
-    print_ipc_int("Initial inc_pos: ", curr_enc_pos);
     /*
      * Read channel if from eeprom? Or say hello with type
      * of peripheral?
      */
-    enc_gled_on();
     print_ipc_int("[G] Hi from GUI: ", 1);
-    _delay_ms(500);
-    enc_gled_off();
 
     while(1)
     {

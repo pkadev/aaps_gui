@@ -8,10 +8,9 @@
 volatile uint8_t irq_event = 0;
 volatile uint16_t enc_pos = 0;
 static uint8_t btn_status = 0;
-volatile uint16_t get_enc_pos(void)
+uint16_t get_enc_pos(void)
 {
-    uint16_t data = enc_pos;
-    return data;
+    return enc_pos;
 }
 
 ISR(PCINT2_vect)
@@ -23,7 +22,7 @@ ISR(PCINT2_vect)
         * when the button is pushed. Also att electric
         * debouncing on the button.
         */
-        _delay_ms(50);
+        _delay_ms(20);
 
         if ((PIND & (1 << PD1)) == 0)
         {
@@ -83,18 +82,23 @@ ISR(INT1_vect) /* Encoder TERM B */
 
 }
 
+static void enable_ext_irq()
+{
+    EICRA |= (1<<ISC01) | (1<<ISC11);        //IRQ on falling edge
+    EIMSK |= (1<<INT0) | (1<<INT1);
+}
+
 void enc_init(void)
 {
     DDRB |= (1 << PB6);
     DDRB |= (1 << PB7);
 
-    /* Encoder button pull-up */
-    PORTD |= (1 << PD1);
-
     /* Enable PCINT17 for encoder button */
-    PCMSK2 = 0;
     PCICR |= (1 << PCIE2);
     PCMSK2 |= (1 << PCINT17);
+
+    /* Enable external IRQ for encoder TERM-A and TERM-B. */
+    enable_ext_irq();
 
 }
 

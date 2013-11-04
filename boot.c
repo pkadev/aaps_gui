@@ -4,7 +4,6 @@
 #include "boot.h"
 #include "enc.h"
 
-static void enable_ext_irq();
 static void enable_pcint18();
 static void enable_pcint0();
 
@@ -18,7 +17,6 @@ aaps_result_t boot(void)
 
     IRQ_INIT();
 
-    enable_ext_irq();
     if(0)
     {
         enable_pcint18();
@@ -51,11 +49,6 @@ void boot_failed(void)
         //LED_TOGGLE();
         _delay_ms(250);
     }
-}
-static void enable_ext_irq()
-{
-    EICRA |= (1<<ISC01) | (1<<ISC11);        //IRQ on falling edge
-    EIMSK |= (1<<INT0) | (1<<INT1);
 }
 
 static void enable_pcint18()

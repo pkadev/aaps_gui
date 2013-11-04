@@ -9,5 +9,5 @@ void enc_rled_off(void);
 void enc_rled_on(void);
 void enc_gled_off(void);
 void enc_gled_on(void);
-volatile uint16_t get_enc_pos(void);
+uint16_t get_enc_pos(void);
 #endif
