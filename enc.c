@@ -26,7 +26,7 @@ ISR(PCINT2_vect)
 
         if ((PIND & (1 << PD1)) == 0)
         {
-            print_ipc_int("btn: ", btn_status);
+            print_ipc_int("[G] btn: ", btn_status);
             switch(btn_status)
             {
                 case 0:
@@ -109,6 +109,10 @@ void enc_rled_off(void)
 void enc_rled_on(void)
 {
     PORTB |= (1 << PB6);
+}
+void enc_gled_toggle(void)
+{
+    PORTB ^= (1 << PB7);
 }
 void enc_gled_off(void)
 {
