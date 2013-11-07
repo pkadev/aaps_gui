@@ -3,6 +3,7 @@
 #include "m48_hal.h"
 #include "boot.h"
 #include "enc.h"
+#include "lcd.h"
 
 static void enable_pcint18();
 static void enable_pcint0();
@@ -24,6 +25,7 @@ aaps_result_t boot(void)
     }
     enc_init();
     spi_init();
+    lcd_init();
     aaps_result_t ret = AAPS_RET_OK;
     /*
      * TODO: Change this to read settings. Or check if Settings

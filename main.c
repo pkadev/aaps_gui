@@ -7,6 +7,7 @@
 #include "ipc.h"
 #include "cmd_exec.h"
 #include "enc.h"
+#include "lcd.h"
 
 struct ipc_packet_t ipc_packet = {0};
 
