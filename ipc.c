@@ -9,8 +9,16 @@
 #include "ipc.h"
 #include "m48_hal.h"
 #include "enc.h"
+#include "lcd.h"
 
-#define SPI_WAIT() while(!(SPSR & (1<<SPIF)))
+static void spi_wait(void)
+{
+    while(!(SPSR & (1<<SPIF))) {
+        DDRD |= (1<<PD0);
+        PORTD |= (1<<PD0);
+    }
+    PORTD &= ~(1<<PD0);
+}
 
 volatile uint8_t ipc_rcv_buf = 0;
 volatile uint8_t rx_buf[IPC_RX_BUF_LEN] = {0};
@@ -71,6 +79,9 @@ aaps_result_t ipc_handle_packet(struct ipc_packet_t *ipc_packet)
             print_ipc(str, strlen(str));
           break;
         }
+        case IPC_CMD_PUT_DATA:
+            cmd_exec_display_voltage(ipc_packet);
+            break;
         case IPC_CMD_SET_RELAY_D:
             cmd_exec_ctrl_relay(ipc_packet, RELAY_D_ID);
             break;
@@ -126,15 +137,15 @@ void print_ipc(const char *str, size_t len)
 
     /* Signal to master that CMD is available */
     IRQ_SET();
-    SPI_WAIT();
     IRQ_CLR();
+    spi_wait();
 
     /* Tell master how many bytes to fetch */
     SPDR = ~len;
-    SPI_WAIT();
+    spi_wait();
     for(i = 0; i < len; i++) {
         SPDR = ~(str[i]);
-        SPI_WAIT();
+        spi_wait();
     }
 
     i = SPSR;

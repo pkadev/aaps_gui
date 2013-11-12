@@ -1,5 +1,6 @@
 #include "cmd_exec.h"
 #include "m48_hal.h"
+#include "lcd.h"
 
 #define THERMO_SENSOR_0     0x00
 #define THERMO_SENSOR_1     0x01
@@ -22,5 +23,16 @@ aaps_result_t cmd_exec_ctrl_relay(struct ipc_packet_t *packet,
             ;//RELAY_CLR();
     }
 
+    return AAPS_RET_OK;
+}
+
+aaps_result_t cmd_exec_display_voltage(struct ipc_packet_t *packet)
+{
+    char buff[10] = {0};
+    static uint16_t voltage = 0;
+    voltage =  (packet->data[1] << 8) | (packet->data[0] & 0xFF);
+    ltoa(voltage, buff, 10);
+    lcd_set_cursor_pos(0);
+    lcd_write_string(buff);
     return AAPS_RET_OK;
 }

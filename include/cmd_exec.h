@@ -9,5 +9,6 @@ aaps_result_t cmd_exec_get_adc(struct ipc_packet_t *packet);
 aaps_result_t cmd_exec_ctrl_relay(struct ipc_packet_t *packet,
                                   uint8_t relay_id);
 
+aaps_result_t cmd_exec_display_voltage(struct ipc_packet_t *packet);
 
 #endif
