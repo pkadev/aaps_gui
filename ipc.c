@@ -155,5 +155,4 @@ void print_ipc(const char *str, size_t len)
      * TODO: This must be here if you print two times in a row.
      * Need to figure out why this is!
      */
-    _delay_ms(10);
 }
