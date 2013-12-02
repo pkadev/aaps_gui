@@ -6,6 +6,7 @@
 #include "lcd.h"
 
 static void enable_pcint18();
+static void enable_pcint2();
 static void enable_pcint0();
 
 /* These two should probably go somewhere else */
@@ -17,7 +18,7 @@ aaps_result_t boot(void)
     STATUS_REGISTER |= (1<<STATUS_REGISTER_IT);
 
     IRQ_INIT();
-
+    enable_pcint2();
     if(0)
     {
         enable_pcint18();
@@ -37,10 +38,9 @@ aaps_result_t boot(void)
 }
 static void spi_init(void)
 {
-    DDRB |= (1<<PB3); //This is MOSI as output?? Remove??
-    SPCR = (1<<SPIE) | (1<<SPE) | (1<<CPOL);
-    SPSR = (1<<SPI2X);
-    /* Do we need to set MISO as output? */
+    //DDRB |= (1<<PB3); //This is MOSI as output?? Remove??
+    SPCR = (1<<SPE) | (1<<CPOL);
+    /* MISO as output */
     DDRB |= (1<<PB4);
 }
 
@@ -51,6 +51,14 @@ void boot_failed(void)
         //LED_TOGGLE();
         _delay_ms(250);
     }
+}
+static void enable_pcint2()
+{
+    /* IRQ for SS on SPI to detect when SPI is busy */
+    /* PIN change IRQ */
+    PCICR |= (1<<PCIE0);      //Enable PCINT0 (PCINT0..7)
+    PCMSK0 |= (1<<PCINT2);   //Enable PCINT2
+    /* End PIN change IRQ */
 }
 
 static void enable_pcint18()

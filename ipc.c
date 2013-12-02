@@ -11,7 +11,22 @@
 #include "enc.h"
 #include "lcd.h"
 
-static void spi_wait(void)
+volatile uint8_t spi_busy_semaphore = 0;
+volatile uint8_t cs_is_restored = 1;
+ISR(PCINT0_vect)
+{
+    if (PINB & (1<<PB2))
+    {
+        spi_busy_semaphore = 0;
+        cs_is_restored = 1;
+    }
+    else 
+    {
+        spi_busy_semaphore = 1;
+    }
+}
+
+void spi_wait(void)
 {
     while(!(SPSR & (1<<SPIF))) {
         DDRD |= (1<<PD0);
@@ -22,137 +37,141 @@ static void spi_wait(void)
 
 volatile uint8_t ipc_rcv_buf = 0;
 volatile uint8_t rx_buf[IPC_RX_BUF_LEN] = {0};
-volatile uint8_t write_ptr = 0;
-volatile uint8_t read_ptr = 0;
-volatile uint8_t packets_available = 0;
-char sendbuffer[40] = {0};
+volatile uint8_t rx_write_ptr = 0;
+volatile uint8_t rx_read_ptr = 0;
 
+volatile uint8_t tx_buf[IPC_RX_BUF_LEN] = {0};
+volatile uint8_t tx_write_ptr = 0;
+volatile uint8_t tx_read_ptr = 0;
 
-ISR(SPI_STC_vect)
+/* Debug functions */
+static uint16_t sent_pkts = 0;
+static uint16_t fetched_pkts = 0;
+
+uint16_t ipc_sent_packets(void)
 {
-    static uint8_t internal_cnt = 0;
-    ipc_rcv_buf = SPDR;
-    rx_buf[write_ptr++] = SPDR;
-    write_ptr %= IPC_RX_BUF_LEN;
-    internal_cnt++;
-
-    if (internal_cnt == IPC_PACKET_LEN) {
-        packets_available++;
-        internal_cnt = 0;
-        //LED_TOGGLE();
-    }
+    return sent_pkts;
+}
+uint16_t ipc_fetched_packets(void)
+{
+    return fetched_pkts;
 }
 
-static void ipc_save_packet(struct ipc_packet_t *dst, size_t len, uint8_t read_ptr)
+void print_tx_read_ptr()
 {
-    dst->cmd = *(rx_buf + (read_ptr++ % IPC_RX_BUF_LEN));
-    dst->len = *(rx_buf + (read_ptr++ % IPC_RX_BUF_LEN));
-    dst->data[0] = *(rx_buf + (read_ptr++ % IPC_RX_BUF_LEN));
-    dst->data[1] = *(rx_buf + (read_ptr++ % IPC_RX_BUF_LEN));
-    dst->crc = *(rx_buf + (read_ptr++ % IPC_RX_BUF_LEN));
-
-    packets_available--;
+    char tmp[10];
+    itoa(tx_read_ptr, tmp, 10);
+    lcd_write_string("txr:");
+    lcd_write_string(tmp);
 }
-
-void send_ipc_enc(uint16_t enc_value)
+void print_tx_buf_len()
 {
-    sendbuffer[0] = IPC_DATA_ENC;
-    sendbuffer[1] = (enc_value >> 8);
-    sendbuffer[2] = (enc_value & 0xff);
-    sendbuffer[3] = '\0';
-    print_ipc(sendbuffer, 4);
+    char tmp[10];
+    itoa(tx_write_ptr, tmp, 10);
+    lcd_write_string("txw:");
+    lcd_write_string(tmp);
 }
+/* End debud functions */
 
-aaps_result_t ipc_handle_packet(struct ipc_packet_t *ipc_packet)
+static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
 {
-    /* TODO: Make exec functions return status */
+    char tmp[10];
+    static uint8_t overflow = 0;
 
-    ipc_save_packet(ipc_packet, IPC_PACKET_LEN, read_ptr);
-    read_ptr += IPC_PACKET_LEN;
-    read_ptr %= IPC_RX_BUF_LEN;
+    if (pkt == NULL)
+        return AAPS_RET_ERROR_BAD_PARAMETERS;
+    aaps_result_t res = AAPS_RET_OK;
 
-    switch(ipc_packet->cmd)
+    uint8_t *pkt_ptr = (uint8_t *)pkt;
+    uint8_t rollback = tx_write_ptr; 
+    for (uint8_t i = 0; i < pkt->len; i++)
     {
-        case IPC_CMD_PERIPH_DETECT:
+        if (&(tx_buf[(tx_write_ptr + 1 % IPC_RX_BUF_LEN)]) == &(tx_buf[tx_read_ptr]))
         {
-            const char str[] = "[G] P detect\n";
-            print_ipc(str, strlen(str));
-          break;
+            itoa(++overflow, tmp, 10);
+            lcd_set_cursor_pos(0);
+            lcd_write_string("BO: ");
+            lcd_write_string(tmp);
+            tx_write_ptr = rollback ;
+            res = AAPS_RET_ERROR_GENERAL;
+            goto overflow;
+             
         }
-        case IPC_CMD_PUT_DATA:
-            cmd_exec_display_voltage(ipc_packet);
-            break;
-        case IPC_CMD_SET_RELAY_D:
-            cmd_exec_ctrl_relay(ipc_packet, RELAY_D_ID);
-            break;
-        case IPC_CMD_SET_RELAY:
-            cmd_exec_ctrl_relay(ipc_packet, RELAY_ID);
-            break;
-        default:
-            print_ipc_int("[G] Unsupported ipc command 0x", ipc_packet->cmd);
-            read_ptr = 0;
-            return AAPS_RET_ERROR_GENERAL;
+        tx_buf[tx_write_ptr] =  pkt_ptr[i];
+        tx_write_ptr = (tx_write_ptr + 1) % IPC_RX_BUF_LEN;
     }
-    return AAPS_RET_OK;
+    sent_pkts++;
+overflow:
+    return res;
 }
 
-/*
- * TODO: Find out if we need both signed and unsigned version
- * of this function. Or better send raw data here and use one
- * byte to tell if it's signed or unsigned.
- */
-void print_ipc_int(const char *str, unsigned int integer)
+ipc_result_t ipc_get_packet_from_buf()
 {
-    char buf[17]; //(sizeof(int)*8+1) All integers fit his on radix=2 systems
-    uint8_t str_len = strlen(str);
-    uint8_t buf_len;
-    sendbuffer[0] = IPC_DATA_ASCII;
-    memcpy(sendbuffer+1, str, str_len);
+    //char tmp[10];
+    uint8_t pkt_len = tx_buf[tx_read_ptr];
+    uint8_t rx;
+    uint8_t tmp;
 
-    ltoa(integer, buf, 10);
-    buf_len = strlen(buf);
 
-    memcpy(sendbuffer + 1 + str_len, buf, buf_len);
-    memset(sendbuffer + 1 + str_len + buf_len, '\n', 1);
-    memset(sendbuffer + 1 + str_len + buf_len + 1, 0, 1);
+    if (ipc_is_tx_buf_empty())
+        return IPC_RET_TX_BUF_EMPTY;
 
-    /*
-     * TODO: Fix this temporary solution:
-     * Add two bytes for the integer and one
-     * byte for null termination.
-     */
-    print_ipc(sendbuffer, strlen(str) + 3);
+    /* Decide if master is getting or putting */
+    tmp = SPDR;
+
+    spi_wait();
+    if (((~tmp) & 0xff) == 0x55)
+    {
+        rx = 1;
+    }
+
+    SPDR = (uint8_t)(~0xFC) & 0xff;
+    spi_wait();
+    SPDR = ~pkt_len;
+    spi_wait();
+   
+    while(pkt_len--)
+    {
+        SPDR = ~(tx_buf[tx_read_ptr]);
+        tx_read_ptr = (tx_read_ptr + 1) % IPC_RX_BUF_LEN;
+        spi_wait();
+        //tmpd = SPDR;
+    }
+
+    fetched_pkts++;
+    return IPC_RET_OK;
 }
-void print_ipc(const char *str, size_t len)
+bool ipc_is_tx_buf_empty(void)
 {
-    /* TODO: This can't be used standalone
-     * if no data type is specified.
-     */
+    if (tx_write_ptr ==
+        tx_read_ptr )
+    {
+        return true;
+    }
+    else 
+    {
+        return false;
+    }
+}
 
-    uint8_t i;
-    SPCR &= ~(1<<SPIE);
+/* Remove this debug function */
+void ipc_set_tx_buf_empty(void)
+{
+    tx_write_ptr = 0;
+}
 
-    /* Put CMD in SPI data buffer */
-    SPDR = ~IPC_CMD_DATA_AVAILABLE;
-
-    /* Signal to master that CMD is available */
+void send_ipc_enc_new(uint16_t enc_value)
+{
+    struct ipc_packet_t pkt;
+    pkt.len = 5;
+    pkt.cmd = IPC_DATA_ENC;
+    pkt.data[0] = (enc_value >> 8);
+    pkt.data[1] = (enc_value & 0xff);
+    pkt.crc = 0xff;
+    if (put_packet_in_tx_buf(&pkt) != AAPS_RET_OK)
+        return;
     IRQ_SET();
     IRQ_CLR();
-    spi_wait();
-
-    /* Tell master how many bytes to fetch */
-    SPDR = ~len;
-    spi_wait();
-    for(i = 0; i < len; i++) {
-        SPDR = ~(str[i]);
-        spi_wait();
-    }
-
-    i = SPSR;
-    i = SPDR;
-    SPCR |= (1<<SPIE);
-    /*
-     * TODO: This must be here if you print two times in a row.
-     * Need to figure out why this is!
-     */
 }
+
+

@@ -5,6 +5,10 @@
 #include "enc.h"
 #include "ipc.h"
 
+
+uint8_t volatile enc_btn_event = 0;
+uint8_t volatile enc_term_a_event = 0;
+uint8_t volatile enc_term_b_event = 0;
 volatile uint8_t irq_event = 0;
 volatile uint16_t enc_pos = 0;
 static uint8_t btn_status = 0;
@@ -13,7 +17,7 @@ uint16_t get_enc_pos(void)
     return enc_pos;
 }
 
-ISR(PCINT2_vect)
+void btn_event(void)
 {
     if ((PIND & (1 << PD1)) == 0)
     {
@@ -22,11 +26,11 @@ ISR(PCINT2_vect)
         * when the button is pushed. Also att electric
         * debouncing on the button.
         */
-        _delay_ms(20);
+        //_delay_ms(20);
 
         if ((PIND & (1 << PD1)) == 0)
         {
-            print_ipc_int("[G] btn: ", btn_status);
+            //print_ipc_int("[G] btn: ", btn_status);
             switch(btn_status)
             {
                 case 0:
@@ -51,35 +55,59 @@ ISR(PCINT2_vect)
     }
 }
 
-ISR(INT0_vect) /* Encoder TERM A */
+ISR(PCINT2_vect)
+{
+    if ((PIND & (1 << PD1)) == 0)
+        enc_btn_event = 1;
+}
+
+void term_a_event(void)
 {
     if (((PIND & (1<<PD3)) == (1 << PD3)))
     {
-        if (btn_status == 1)
-            enc_pos += 10;
-        else if (btn_status == 2)
-            enc_pos += 50;
-        else if (btn_status == 3)
-            enc_pos += 100;
-        else
-            enc_pos++;
+        /* TODO: Remove delay */
+        //_delay_ms(40);
+        if (((PIND & (1<<PD3)) == (1 << PD3)))
+        {
+            if (btn_status == 1)
+                enc_pos += 10;
+            else if (btn_status == 2)
+                enc_pos += 50;
+            else if (btn_status == 3)
+                enc_pos += 100;
+            else
+                enc_pos++;
+            }
     }
 }
-
-ISR(INT1_vect) /* Encoder TERM B */
+ISR(INT0_vect) /* Encoder TERM A */
+{
+    if (((PIND & (1<<PD3)) == (1 << PD3)))
+        enc_term_a_event = 1;
+}
+void term_b_event(void)
 {
     if (((PIND & (1<<PD2)) == (1 << PD2)))
     {
-        if (btn_status == 1)
-           enc_pos-=10;
-        else if (btn_status == 2)
-            enc_pos -= 50;
-        else if (btn_status == 3)
-            enc_pos -= 100;
-        else
-           enc_pos--;
+        /* TODO: Remove delay */
+        //_delay_ms(40);
+        if (((PIND & (1<<PD2)) == (1 << PD2)))
+        {
+            if (btn_status == 1)
+               enc_pos-=10;
+            else if (btn_status == 2)
+                enc_pos -= 50;
+            else if (btn_status == 3)
+                enc_pos -= 100;
+            else
+               enc_pos--;
+        }
     }
-
+}
+ISR(INT1_vect) /* Encoder TERM B */
+{
+    if (((PIND & (1<<PD2)) == (1 << PD2)))
+        enc_term_b_event = 1;
 }
 
 static void enable_ext_irq()

@@ -2,6 +2,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdlib.h>
+#include <util/atomic.h>
 /*
  * aaps_g.c
  *
@@ -54,19 +55,39 @@
 #define TIMING_BIT PC5
 #define TIMING_HIGH() TIMING_PORT|=(1<<TIMING_BIT)
 #define TIMING_LOW() TIMING_PORT&=~(1<<TIMING_BIT)
+static void bit_write(uint8_t _data)
+{
+    if (_data & 0x80)
+        LCD_PORT |= (0x80);
+    else 
+        LCD_PORT &= ~(0x80);
 
+    if (_data & 0x40)
+        LCD_PORT |= (0x40);
+    else
+        LCD_PORT &= ~(0x40);
+
+    if (_data & 0x20)
+        LCD_PORT |= (0x20);
+    else
+        LCD_PORT &= ~(0x20);
+
+    if (_data & 0x10)
+        LCD_PORT |= (0x10);
+    else
+        LCD_PORT &= ~(0x10);
+
+}
 static void lcd_write4(uint8_t data)
 {
-    uint8_t port_data;
-     /* High Nibble */
-    port_data = (LCD_PIN & 0x0F);
-    LCD_PORT = ((data & 0xF0) | port_data);
+
+    /* High Nibble */
+    bit_write(data);
     LCD_E_SET();
     _delay_us(1);
     LCD_E_CLR();
     /* Low Nibble */
-    port_data = (LCD_PIN & 0x0F);
-    LCD_PORT = (data << 4) | port_data;
+    bit_write(data << 4);
     LCD_E_SET();
     _delay_us(1);
     LCD_E_CLR();
