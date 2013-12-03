@@ -14,7 +14,6 @@ int main(void)
 {
     uint16_t curr_enc_pos;
     
-    //aaps_result_t result = AAPS_RET_OK;
     if (boot() != AAPS_RET_OK)
         boot_failed();
 
@@ -24,7 +23,7 @@ int main(void)
      * Read channel if from eeprom? Or say hello with type
      * of peripheral?
      */
-    ipc_print_str("[G] Hi from GUI\n";
+    //ipc_print_str("[G] Hi from GUI\n";
     char tmp[10];
     spi_busy_semaphore = 0;
     while(1)

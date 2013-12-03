@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <util/delay.h>
 
 #include "cmd_exec.h"
 #include "ipc.h"
@@ -44,34 +43,6 @@ volatile uint8_t tx_buf[IPC_RX_BUF_LEN] = {0};
 volatile uint8_t tx_write_ptr = 0;
 volatile uint8_t tx_read_ptr = 0;
 
-/* Debug functions */
-static uint16_t sent_pkts = 0;
-static uint16_t fetched_pkts = 0;
-
-uint16_t ipc_sent_packets(void)
-{
-    return sent_pkts;
-}
-uint16_t ipc_fetched_packets(void)
-{
-    return fetched_pkts;
-}
-
-void print_tx_read_ptr()
-{
-    char tmp[10];
-    itoa(tx_read_ptr, tmp, 10);
-    lcd_write_string("txr:");
-    lcd_write_string(tmp);
-}
-void print_tx_buf_len()
-{
-    char tmp[10];
-    itoa(tx_write_ptr, tmp, 10);
-    lcd_write_string("txw:");
-    lcd_write_string(tmp);
-}
-/* End debud functions */
 
 static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
 {
@@ -100,7 +71,6 @@ static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
         tx_buf[tx_write_ptr] =  pkt_ptr[i];
         tx_write_ptr = (tx_write_ptr + 1) % IPC_RX_BUF_LEN;
     }
-    sent_pkts++;
 overflow:
     return res;
 }
@@ -138,7 +108,6 @@ ipc_result_t ipc_get_packet_from_buf()
         //tmpd = SPDR;
     }
 
-    fetched_pkts++;
     return IPC_RET_OK;
 }
 bool ipc_is_tx_buf_empty(void)
@@ -152,12 +121,6 @@ bool ipc_is_tx_buf_empty(void)
     {
         return false;
     }
-}
-
-/* Remove this debug function */
-void ipc_set_tx_buf_empty(void)
-{
-    tx_write_ptr = 0;
 }
 
 void send_ipc_enc_new(uint16_t enc_value)
