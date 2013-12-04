@@ -25,16 +25,34 @@ int main(void)
      */
     //ipc_print_str("[G] Hi from GUI\n";
     char tmp[10];
+    uint8_t test_data;
     spi_busy_semaphore = 0;
     while(1)
     {
+
         if (spi_busy_semaphore)
         {
-            if (!ipc_is_tx_buf_empty() && cs_is_restored)
+            if (cs_is_restored)
             {
                 cs_is_restored = 0;
+                /* Master puts data */
+                uint8_t rx;
+                char rx_buf[4];
+                spi_wait();
+                rx = SPDR;   
+                spi_wait();
+                rx = SPDR;   
+                if (rx == 0x99)
+                {
+                    enc_rled_on();
+                    test_data = ipc_receive(&rx_buf);
+                    lcd_write_string(rx_buf);
+                    enc_rled_off();
+                    goto end;
+                }
 
-                if (ipc_get_packet_from_buf() != IPC_RET_OK) 
+                /* Master gets data */
+                if (ipc_transfer() != IPC_RET_OK) 
                 {
                     /* TODO: Remove this crap */
                     static uint8_t empty = 0;
@@ -45,6 +63,7 @@ int main(void)
                 }
                 SPDR = (~0xC0) & 0xff;
                 spi_wait();
+end:
                 /* Not sure if this is needed */
                 while(spi_busy_semaphore);
             }
@@ -79,9 +98,8 @@ int main(void)
             uint16_t new_enc_pos = get_enc_pos();
             if (curr_enc_pos != new_enc_pos)
             {
-                static uint8_t enc = 0;
                 curr_enc_pos = new_enc_pos;
-                send_ipc_enc_new(enc++);
+                send_ipc_enc_new(new_enc_pos);
 
             }
         }

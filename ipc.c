@@ -4,14 +4,23 @@
 #include <stdio.h>
 #include <string.h>
 
+
 #include "cmd_exec.h"
 #include "ipc.h"
 #include "m48_hal.h"
 #include "enc.h"
 #include "lcd.h"
-
 volatile uint8_t spi_busy_semaphore = 0;
 volatile uint8_t cs_is_restored = 1;
+
+
+
+#define IPC_DUMMY_BYTE 0xff
+#define IPC_SYNC_BYTE 0xfc
+#define IPC_FINALIZE_BYTE 0xc0
+#define IPC_GET_BYTE 0x55
+#define IPC_PUT_BYTE 0x66
+
 ISR(PCINT0_vect)
 {
     if (PINB & (1<<PB2))
@@ -46,9 +55,6 @@ volatile uint8_t tx_read_ptr = 0;
 
 static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
 {
-    char tmp[10];
-    static uint8_t overflow = 0;
-
     if (pkt == NULL)
         return AAPS_RET_ERROR_BAD_PARAMETERS;
     aaps_result_t res = AAPS_RET_OK;
@@ -59,10 +65,9 @@ static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
     {
         if (&(tx_buf[(tx_write_ptr + 1 % IPC_RX_BUF_LEN)]) == &(tx_buf[tx_read_ptr]))
         {
-            itoa(++overflow, tmp, 10);
-            lcd_set_cursor_pos(0);
-            lcd_write_string("BO: ");
-            lcd_write_string(tmp);
+            /* This is overflow in the internal transmit buffer */
+            enc_gled_on();
+            enc_rled_on();
             tx_write_ptr = rollback ;
             res = AAPS_RET_ERROR_GENERAL;
             goto overflow;
@@ -74,32 +79,45 @@ static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
 overflow:
     return res;
 }
-
-ipc_result_t ipc_get_packet_from_buf()
+ipc_result_t ipc_receive(char *rx_buf)
 {
-    //char tmp[10];
+    uint8_t data, rx_len;
+    SPDR = (uint8_t)(~IPC_SYNC_BYTE) & 0xff;
+    spi_wait();
+    data = SPDR; /* Useless data */
+    spi_wait();
+    data = SPDR; /* Packet length */
+    rx_len = (~data) -1; /* Subtract one since size is already transmitted */
+    spi_wait();
+
+    while(rx_len--)
+    {
+        rx_buf[3 -rx_len] = (~SPDR) & 0xff;
+        spi_wait(); 
+    }
+    SPDR = (~0xC0) & 0xff;
+    //spi_wait();
+    return ~rx_len;
+}
+ipc_result_t ipc_transfer()
+{
     uint8_t pkt_len = tx_buf[tx_read_ptr];
-    uint8_t rx;
     uint8_t tmp;
-
-
+    
     if (ipc_is_tx_buf_empty())
         return IPC_RET_TX_BUF_EMPTY;
 
-    /* Decide if master is getting or putting */
     tmp = SPDR;
-
     spi_wait();
-    if (((~tmp) & 0xff) == 0x55)
-    {
-        rx = 1;
-    }
-
-    SPDR = (uint8_t)(~0xFC) & 0xff;
+  
+    enc_gled_on();
+    
+    SPDR = (uint8_t)(~IPC_SYNC_BYTE) & 0xff;
     spi_wait();
     SPDR = ~pkt_len;
+    
     spi_wait();
-   
+    
     while(pkt_len--)
     {
         SPDR = ~(tx_buf[tx_read_ptr]);
@@ -112,15 +130,10 @@ ipc_result_t ipc_get_packet_from_buf()
 }
 bool ipc_is_tx_buf_empty(void)
 {
-    if (tx_write_ptr ==
-        tx_read_ptr )
-    {
+    if (tx_write_ptr == tx_read_ptr )
         return true;
-    }
     else 
-    {
         return false;
-    }
 }
 
 void send_ipc_enc_new(uint16_t enc_value)

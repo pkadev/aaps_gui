@@ -36,8 +36,8 @@ struct ipc_packet_t
 {
     uint8_t len;
     uint8_t cmd;
-    uint8_t data[IPC_DATA_LEN];
     uint8_t crc;
+    uint8_t data[IPC_DATA_LEN];
 };
 
 typedef enum
@@ -56,6 +56,7 @@ extern volatile uint8_t cs_is_restored;
 /* IPC functions */
 void send_ipc_enc_new(uint16_t enc_value);
 bool ipc_is_tx_buf_empty(void);
-ipc_result_t ipc_get_packet_from_buf();
+ipc_result_t ipc_receive();
+ipc_result_t ipc_transfer();
 
 #endif

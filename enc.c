@@ -34,20 +34,20 @@ void btn_event(void)
             switch(btn_status)
             {
                 case 0:
-                    enc_gled_on();
+                    //enc_gled_on();
                     btn_status = 1;
                 break;
                 case 1:
-                    enc_rled_on();
+                    //enc_rled_on();
                     btn_status = 2;
                 break;
                 case 2:
-                    enc_gled_off();
+                    //enc_gled_off();
                     btn_status = 3;
                 break;
                 case 3:
-                    enc_gled_off();
-                    enc_rled_off();
+                    //enc_gled_off();
+                    //enc_rled_off();
                     btn_status = 0;
                 break;
             }
@@ -132,21 +132,21 @@ void enc_init(void)
 
 void enc_rled_off(void)
 {
-    PORTB &= ~(1 << PB6);
+    PORTB &= ~(1 << PB7);
 }
 void enc_rled_on(void)
 {
-    PORTB |= (1 << PB6);
+    PORTB |= (1 << PB7);
 }
-void enc_gled_toggle(void)
+void enc_rled_toggle(void)
 {
     PORTB ^= (1 << PB7);
 }
 void enc_gled_off(void)
 {
-    PORTB &= ~(1 << PB7);
+    PORTB &= ~(1 << PB6);
 }
 void enc_gled_on(void)
 {
-    PORTB |= (1 << PB7);
+    PORTB |= (1 << PB6);
 }

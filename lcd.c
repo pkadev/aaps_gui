@@ -112,7 +112,7 @@ void lcd_clr_disp(void) //Clear all charachters on the LCD. Cursor will be moved
     _delay_ms(5);
 }
 
-static void write_char(char c)  //Write character to LCD (ASCII)
+void write_char(char c)  //Write character to LCD (ASCII)
 {
     LCD_REG_SET(); //RS=1
     lcd_write4(c);
