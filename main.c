@@ -46,6 +46,15 @@ int main(void)
             /*TODO: Add error handling */
         }
 
+        //if (system_ipc_packets)
+        //{
+        //    /*
+        //     * Handle IPC packets that are received
+        //     * and saved in IPC system buffer after
+        //     * error checks
+        //     */
+        //}
+
         /* Handle all other system events */
         if (enc_term_b_event)
         {
