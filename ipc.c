@@ -14,8 +14,9 @@
 #define IPC_FINALIZE_BYTE 0xc0
 #define IPC_GET_BYTE 0x55
 #define IPC_PUT_BYTE 0x66
-
 #define SPDR_INV(x) ((uint8_t)(~x)&0xff)
+
+#define IPC_PKT_OVERHEAD 3  /* Len, cmd, crc */
 
 volatile uint8_t spi_busy_semaphore = 0;
 volatile uint8_t cs_is_restored = 1;
@@ -62,7 +63,9 @@ static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
 
     if (pkt == NULL)
         return AAPS_RET_ERROR_BAD_PARAMETERS;
-    for (uint8_t i = 0; i < pkt->len; i++)
+
+    /* First add overhead bytes */
+    for (uint8_t i = 0; i < IPC_PKT_OVERHEAD; i++)
     {
         if (&(tx_buf[(tx_write_ptr + 1 % IPC_RX_BUF_LEN)]) == &(tx_buf[tx_read_ptr]))
         {
@@ -71,33 +74,66 @@ static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
             res = AAPS_RET_ERROR_GENERAL;
             goto overflow;
         }
-        tx_buf[tx_write_ptr] =  pkt_ptr[i];
+        tx_buf[tx_write_ptr] = pkt_ptr[i];
+        tx_write_ptr = (tx_write_ptr + 1) % IPC_RX_BUF_LEN;
+    }
+
+    /* Then data from from heap */
+    for (uint8_t i = 0; i < pkt->len - IPC_PKT_OVERHEAD; i++)
+    {
+        if (&(tx_buf[(tx_write_ptr + 1 % IPC_RX_BUF_LEN)]) == &(tx_buf[tx_read_ptr]))
+        {
+            /* This is overflow in the internal transmit buffer */
+            tx_write_ptr = rollback;
+            res = AAPS_RET_ERROR_GENERAL;
+            goto overflow;
+        }
+        tx_buf[tx_write_ptr] = pkt->data[i];
         tx_write_ptr = (tx_write_ptr + 1) % IPC_RX_BUF_LEN;
     }
 overflow:
     return res;
 }
 
-static ipc_result_t ipc_receive(char *rx_buf)
+static ipc_ret_t ipc_receive(struct ipc_packet_t *rx_pkt)
 {
     /*
      * TODO: Handle errors. Sequence nbr, crc
      * Alse handle return value. Put pkt size in the
      * received data structure.
      */
-    uint8_t data, rx_len;
+    uint8_t data, data_len;
     SPDR = SPDR_INV(IPC_SYNC_BYTE);
     spi_wait();
     data = SPDR; /* Useless data because the nature of SPI */
     spi_wait();
-    data = SPDR; /* Packet length */
-    rx_len = (~data) -1; /* Subtract one since size is already transmitted */
+
+    /* Total packet length */
+    rx_pkt->len = SPDR_INV(SPDR);
+
+    rx_pkt->data = malloc(rx_pkt->len - IPC_PKT_OVERHEAD);
+    if (rx_pkt->data == NULL)
+    {
+        return IPC_RET_ERROR_OUT_OF_MEMORY;
+    }
+
+    /* Payload length */
+    data_len = rx_pkt->len - IPC_PKT_OVERHEAD;
     spi_wait();
 
-    while(rx_len--)
+    /* Cmd */
+    rx_pkt->cmd = SPDR_INV(SPDR);
+    spi_wait();
+
+    /* CRC */
+    rx_pkt->crc = SPDR_INV(SPDR);
+    spi_wait();
+
+    uint8_t cnt = 0;
+    while(data_len--)
     {
-        rx_buf[3 -rx_len] = (~SPDR) & 0xff;
-        spi_wait(); 
+        rx_pkt->data[cnt++] = SPDR_INV(SPDR);
+        spi_wait();
     }
 
     /* Clear out SPDR so it's not sync/finalize byte */
@@ -105,13 +141,13 @@ static ipc_result_t ipc_receive(char *rx_buf)
     return IPC_RET_OK;
 }
 
-static ipc_result_t ipc_transmit()
+static ipc_ret_t ipc_transmit()
 {
     uint8_t pkt_len = tx_buf[tx_read_ptr];
     uint8_t tmp;
 
     if (ipc_is_tx_buf_empty())
-        return IPC_RET_TX_BUF_EMPTY;
+        return IPC_RET_ERROR_TX_BUF_EMPTY;
 
     tmp = SPDR;
     spi_wait();
@@ -130,7 +166,7 @@ static ipc_result_t ipc_transmit()
     }
 
     /* Clear out SPDR so it's not any sync/finalize byte */
-    SPDR = (~0x00) & 0xff;
+    SPDR = SPDR_INV(0x00);
     return IPC_RET_OK;
 }
 
@@ -140,10 +176,10 @@ void ipc_init(void)
     cs_is_restored = 1;
 }
 
-ipc_result_t ipc_transfer()
+ipc_ret_t ipc_transfer()
 {
     /* TODO: Handle dynamic packet sizes */
-    char rx_buf[4];
+    struct ipc_packet_t pkt = {0};
     uint8_t misc;
 
     if (spi_busy_semaphore)
@@ -159,15 +195,25 @@ ipc_result_t ipc_transfer()
             if (misc == SPDR_INV(IPC_PUT_BYTE))
             {
                 /* Master puts data */
-                misc = ipc_receive(rx_buf);
+                misc = ipc_receive(&pkt);
                 if (misc == IPC_RET_OK)
                 {
-                    /* TODO: handle the packet in generic way */
-                    lcd_write_string(rx_buf);
+                    /*
+                     * TODO: handle the packet in generic way.
+                     * Probably add it to a list of packets for
+                     * the system to handle in a timely fashion
+                     */
+                    lcd_write_string((char*)pkt.data);
+                    free(pkt.data);
+                    pkt.data = NULL;
                     goto end;
                 }
                 else
+                {
+                    lcd_write_string("ipc_receive error");
+                    while(1);
                     return misc;
+                }
             }
             else
             {
@@ -191,16 +237,28 @@ void ipc_send_enc(uint16_t enc_value)
 {
     /* TODO: Handle errors */
     struct ipc_packet_t pkt;
-    pkt.len = 5;
+    pkt.len = sizeof(enc_value) + IPC_PKT_OVERHEAD;
     pkt.cmd = IPC_DATA_ENC;
+    pkt.data = malloc(pkt.len - IPC_PKT_OVERHEAD);
+
+    if (pkt.data == NULL)
+    {
+        /* Handle error */
+        return;
+    }
+
     pkt.data[0] = (enc_value >> 8);
     pkt.data[1] = (enc_value & 0xff);
+
     pkt.crc = 0xff;
+
     if (put_packet_in_tx_buf(&pkt) != AAPS_RET_OK)
     {
         /* Handle error */
         return;
     }
+
+    free(pkt.data);
 
     IRQ_SET();
     /* TODO: Find out if we need NOP here */

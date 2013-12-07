@@ -6,7 +6,7 @@
 #include "boot.h"
 
 #define IPC_RX_BUF_LEN 62
-#define IPC_DATA_LEN 2
+
 /* IPC Commands */
 enum ipc_command_t
 {
@@ -37,19 +37,29 @@ struct ipc_packet_t
     uint8_t len;
     uint8_t cmd;
     uint8_t crc;
-    uint8_t data[IPC_DATA_LEN];
+    uint8_t *data;
 };
 
 typedef enum
 {
     IPC_RET_OK,
-    IPC_RET_ERROR_GENERAL,
-    IPC_RET_TX_BUF_EMPTY,
-} ipc_result_t;
+    IPC_RET_ERROR_GENERIC,
+    IPC_RET_ERROR_BAD_PARAMS,
+    IPC_RET_ERROR_TARGET_DEAD,
+    IPC_RET_ERROR_RX,
+    IPC_RET_ERROR_TX,
+    IPC_RET_ERROR_NOT_SUPPORTED,
+    IPC_RET_ERROR_PUT_SYNC,
+    IPC_RET_ERROR_GET_SYNC,
+    IPC_RET_ERROR_PUT_FINALIZE,
+    IPC_RET_ERROR_GET_FINALIZE,
+    IPC_RET_ERROR_TX_BUF_EMPTY,
+    IPC_RET_ERROR_OUT_OF_MEMORY,
+} ipc_ret_t;
 
 /* IPC primitives functions */
 void ipc_init(void);
-ipc_result_t ipc_transfer();
+ipc_ret_t ipc_transfer();
 
 /* TODO: Move to "business unit layer" ? */
 void ipc_send_enc(uint16_t enc_value);
