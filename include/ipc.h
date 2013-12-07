@@ -55,6 +55,7 @@ typedef enum
     IPC_RET_ERROR_GET_FINALIZE,
     IPC_RET_ERROR_TX_BUF_EMPTY,
     IPC_RET_ERROR_OUT_OF_MEMORY,
+    IPC_RET_ERROR_CRC_FAIL,
 } ipc_ret_t;
 
 /* IPC primitives functions */

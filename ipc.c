@@ -8,6 +8,7 @@
 #include "m48_hal.h"
 #include "enc.h"
 #include "lcd.h"
+#include "crc8.h"
 
 #define IPC_DUMMY_BYTE 0xff
 #define IPC_SYNC_BYTE 0xfc
@@ -88,7 +89,7 @@ static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
             res = AAPS_RET_ERROR_GENERAL;
             goto overflow;
         }
-        tx_buf[tx_write_ptr] = pkt->data[i];
+        tx_buf[tx_write_ptr] = pkt->data[pkt->len - IPC_PKT_OVERHEAD - i - 1];
         tx_write_ptr = (tx_write_ptr + 1) % IPC_RX_BUF_LEN;
     }
 overflow:
@@ -103,6 +104,7 @@ static ipc_ret_t ipc_receive(struct ipc_packet_t *rx_pkt)
      * received data structure.
      */
     uint8_t data, data_len;
+    ipc_ret_t ret = IPC_RET_OK;
     SPDR = SPDR_INV(IPC_SYNC_BYTE);
     spi_wait();
     data = SPDR; /* Useless data because the nature of SPI */
@@ -114,7 +116,8 @@ static ipc_ret_t ipc_receive(struct ipc_packet_t *rx_pkt)
     rx_pkt->data = malloc(rx_pkt->len - IPC_PKT_OVERHEAD);
     if (rx_pkt->data == NULL)
     {
-        return IPC_RET_ERROR_OUT_OF_MEMORY;
+        ret = IPC_RET_ERROR_OUT_OF_MEMORY;
+        goto exit;
     }
 
     /* Payload length */
@@ -136,9 +139,12 @@ static ipc_ret_t ipc_receive(struct ipc_packet_t *rx_pkt)
         spi_wait();
     }
 
-    /* Clear out SPDR so it's not sync/finalize byte */
+    if (crc8(rx_pkt->data, rx_pkt->len - IPC_PKT_OVERHEAD) != rx_pkt->crc)
+       ret = IPC_RET_ERROR_CRC_FAIL;
+exit:
+    /* Clear SPDR so it's not sync/finalize byte */
     SPDR = SPDR_INV(0x00);
-    return IPC_RET_OK;
+    return ret;
 }
 
 static ipc_ret_t ipc_transmit()
@@ -211,7 +217,6 @@ ipc_ret_t ipc_transfer()
                 else
                 {
                     lcd_write_string("ipc_receive error");
-                    while(1);
                     return misc;
                 }
             }
@@ -250,7 +255,7 @@ void ipc_send_enc(uint16_t enc_value)
     pkt.data[0] = (enc_value >> 8);
     pkt.data[1] = (enc_value & 0xff);
 
-    pkt.crc = 0xff;
+    pkt.crc = crc8(pkt.data, 2);
 
     if (put_packet_in_tx_buf(&pkt) != AAPS_RET_OK)
     {
