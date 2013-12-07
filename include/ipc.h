@@ -47,16 +47,10 @@ typedef enum
     IPC_RET_TX_BUF_EMPTY,
 } ipc_result_t;
 
-/* SPI Functionality */
-void spi_wait(void);
-extern volatile uint8_t spi_busy_semaphore;
-extern volatile uint8_t cs_is_restored;
-
-
-/* IPC functions */
-void send_ipc_enc_new(uint16_t enc_value);
-bool ipc_is_tx_buf_empty(void);
-ipc_result_t ipc_receive();
+/* IPC primitives functions */
+void ipc_init(void);
 ipc_result_t ipc_transfer();
 
+/* TODO: Move to "business unit layer" ? */
+void ipc_send_enc(uint16_t enc_value);
 #endif
