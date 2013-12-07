@@ -37,10 +37,7 @@ ISR(PCINT0_vect)
 void spi_wait(void)
 {
     while(!(SPSR & (1<<SPIF))) {
-        DDRD |= (1<<PD0);
-        PORTD |= (1<<PD0);
     }
-    PORTD &= ~(1<<PD0);
 }
 
 volatile uint8_t ipc_rcv_buf = 0;
