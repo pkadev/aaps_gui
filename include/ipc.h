@@ -60,7 +60,9 @@ typedef enum
 
 /* IPC primitives functions */
 void ipc_init(void);
+uint8_t packets_pending();
 ipc_ret_t ipc_transfer();
+void ipc_reduce_pkts_pending();
 
 /* TODO: Move to "business unit layer" ? */
 void ipc_send_enc(uint16_t enc_value);

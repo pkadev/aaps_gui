@@ -66,6 +66,7 @@ SRC += cmd_exec.c
 SRC += enc.c
 SRC += lcd.c
 SRC += crc8.c
+SRC += core.c
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s

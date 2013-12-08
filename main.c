@@ -2,13 +2,14 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <string.h>
+#include "core.h"
 #include "m48_hal.h"
 #include "boot.h"
 #include "ipc.h"
 #include "cmd_exec.h"
 #include "enc.h"
 #include "lcd.h"
-#include <util/atomic.h>
+#include "core.h"
 
 //static void debug_led_init()
 //{
@@ -32,28 +33,39 @@ int main(void)
 
     curr_enc_pos = get_enc_pos();
 
+    core_init_temp();
     /*
      * Read channel if from eeprom? Or say hello with type
      * of peripheral?
      */
     //ipc_print_str("[G] Hi from GUI\n";
-
+    struct ipc_packet_t ipc_pkt;
     while(1)
     {
         /* Handle IPC traffic */
-        if (ipc_transfer() != IPC_RET_OK)
+        if (ipc_transfer(&ipc_pkt) == IPC_RET_OK)
+        {
+            if(packets_pending())
+            {
+                ipc_reduce_pkts_pending();
+                if (ipc_pkt.cmd == IPC_CMD_PUT_DATA)
+                {
+                    struct temperature_t temp;
+                    temp.whole = ipc_pkt.data[0];
+                    temp.decimal = ipc_pkt.data[1];
+
+                    core_draw_temp(&temp);
+                }
+                free(ipc_pkt.data);
+                ipc_pkt.data = NULL;
+            }
+        }
+        else
         {
             /*TODO: Add error handling */
+            lcd_write_string("IPC Error");
+            while(1);
         }
-
-        //if (system_ipc_packets)
-        //{
-        //    /*
-        //     * Handle IPC packets that are received
-        //     * and saved in IPC system buffer after
-        //     * error checks
-        //     */
-        //}
 
         /* Handle all other system events */
         if (enc_term_b_event)

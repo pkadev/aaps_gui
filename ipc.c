@@ -30,6 +30,8 @@ volatile uint8_t tx_buf[IPC_RX_BUF_LEN] = {0};
 volatile uint8_t tx_write_ptr = 0;
 volatile uint8_t tx_read_ptr = 0;
 
+static uint8_t pkts_pending = 0;
+
 ISR(PCINT0_vect)
 {
     if (PINB & (1<<PB2))
@@ -50,7 +52,7 @@ static inline void spi_wait(void)
 
 static bool ipc_is_tx_buf_empty(void)
 {
-    if (tx_write_ptr == tx_read_ptr )
+    if (tx_write_ptr == tx_read_ptr)
         return true;
     else
         return false;
@@ -61,12 +63,15 @@ static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
     aaps_result_t res = AAPS_RET_OK;
     uint8_t *pkt_ptr = (uint8_t *)pkt;
     uint8_t rollback = tx_write_ptr;
+    uint8_t i;
 
     if (pkt == NULL)
         return AAPS_RET_ERROR_BAD_PARAMETERS;
 
+
+
     /* First add overhead bytes */
-    for (uint8_t i = 0; i < IPC_PKT_OVERHEAD; i++)
+    for (i = 0; i < IPC_PKT_OVERHEAD; i++)
     {
         if (&(tx_buf[(tx_write_ptr + 1 % IPC_RX_BUF_LEN)]) == &(tx_buf[tx_read_ptr]))
         {
@@ -80,7 +85,7 @@ static aaps_result_t put_packet_in_tx_buf(struct ipc_packet_t *pkt)
     }
 
     /* Then data from from heap */
-    for (uint8_t i = 0; i < pkt->len - IPC_PKT_OVERHEAD; i++)
+    for (i = 0; i < pkt->len - IPC_PKT_OVERHEAD; i++)
     {
         if (&(tx_buf[(tx_write_ptr + 1 % IPC_RX_BUF_LEN)]) == &(tx_buf[tx_read_ptr]))
         {
@@ -182,11 +187,19 @@ void ipc_init(void)
     cs_is_restored = 1;
 }
 
-ipc_ret_t ipc_transfer()
+uint8_t packets_pending()
+{
+    return pkts_pending;
+}
+void ipc_reduce_pkts_pending()
+{
+    pkts_pending--;
+}
+ipc_ret_t ipc_transfer(struct ipc_packet_t *pkt)
 {
     /* TODO: Handle dynamic packet sizes */
-    struct ipc_packet_t pkt = {0};
     uint8_t misc;
+    ipc_ret_t res = IPC_RET_OK;
 
     if (spi_busy_semaphore)
     {
@@ -201,23 +214,22 @@ ipc_ret_t ipc_transfer()
             if (misc == SPDR_INV(IPC_PUT_BYTE))
             {
                 /* Master puts data */
-                misc = ipc_receive(&pkt);
+                misc = ipc_receive(pkt);
                 if (misc == IPC_RET_OK)
                 {
+                    pkts_pending++;
+                    res = misc;
                     /*
                      * TODO: handle the packet in generic way.
                      * Probably add it to a list of packets for
                      * the system to handle in a timely fashion
                      */
-                    lcd_write_string((char*)pkt.data);
-                    free(pkt.data);
-                    pkt.data = NULL;
                     goto end;
                 }
                 else
                 {
-                    lcd_write_string("ipc_receive error");
-                    return misc;
+                    res = misc;
+                    goto end;
                 }
             }
             else
@@ -234,7 +246,7 @@ end:
                 SPDR = SPDR_INV(IPC_FINALIZE_BYTE);
         }
     }
-    return IPC_RET_OK;
+    return res;
 }
 
 /* TODO: Move to "business unit layer" ? */
