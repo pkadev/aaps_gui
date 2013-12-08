@@ -47,7 +47,6 @@ int main(void)
         {
             if(packets_pending())
             {
-                ipc_reduce_pkts_pending();
                 if (ipc_pkt.cmd == IPC_CMD_PUT_DATA)
                 {
                     struct temperature_t temp;
@@ -56,8 +55,7 @@ int main(void)
 
                     core_draw_temp(&temp);
                 }
-                free(ipc_pkt.data);
-                ipc_pkt.data = NULL;
+                ipc_reduce_pkts_pending(&ipc_pkt);
             }
         }
         else
