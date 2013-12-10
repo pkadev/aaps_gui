@@ -11,19 +11,6 @@
 #include "lcd.h"
 #include "core.h"
 
-//static void debug_led_init()
-//{
-//    DDRD |= (1<<PD0);
-//}
-//
-//static void debug_led_on()
-//{
-//    PORTD |= (1<<PD0);
-//}
-//static void debug_led_off()
-//{
-//    PORTD &= ~(1<<PD0);
-//}
 int main(void)
 {
     uint16_t curr_enc_pos;
@@ -40,6 +27,8 @@ int main(void)
      */
     //ipc_print_str("[G] Hi from GUI\n";
     struct ipc_packet_t ipc_pkt;
+    uint16_t pkt_cnt = 0;
+    char buf[10];
     while(1)
     {
         /* Handle IPC traffic */
@@ -47,6 +36,9 @@ int main(void)
         {
             if(packets_pending())
             {
+                lcd_set_cursor_pos(84);
+                utoa(pkt_cnt++, buf, 10);
+                lcd_write_string(buf);
                 if (ipc_pkt.cmd == IPC_CMD_PUT_DATA)
                 {
                     //struct temperature_t temp;

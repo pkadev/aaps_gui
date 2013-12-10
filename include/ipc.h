@@ -21,8 +21,15 @@ enum ipc_command_t
     IPC_CMD_SET_RELAY_D,
     IPC_CMD_SET_RELAY,
     IPC_CMD_PUT_DATA,
+    IPC_CMD_DISPLAY_ADC,
+    IPC_CMD_DISPLAY_VOLTAGE,
+    IPC_CMD_DISPLAY_CURRENT,
+    IPC_CMD_DISPLAY_THERMO,
+    IPC_CMD_DISPLAY_ADC,
+    IPC_CMD_DISPLAY_DAC,
 };
 
+/* Data types that peripherals can generate */
 enum ipc_data_type_t
 {
     IPC_DATA_VOLTAGE = 0x7B,

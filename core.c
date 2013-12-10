@@ -14,7 +14,7 @@ void core_init()
 
 void core_draw_temp(struct temperature_t *temp, uint8_t sensor)
 {
-    char buf[3];
+    char buf[10];
     itoa(temp->whole, buf, 10);
 
     switch (sensor)
@@ -36,7 +36,7 @@ void core_draw_temp(struct temperature_t *temp, uint8_t sensor)
 }
 void core_draw_adc(uint8_t msb, uint8_t lsb, uint8_t type, uint8_t ch)
 {
-    char buf[6];
+    char buf[10];
     switch(ch)
     {
         case 0:
