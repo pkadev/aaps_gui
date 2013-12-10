@@ -19,8 +19,9 @@ struct temperature_t
     uint8_t decimal;
 };
 
-void core_draw_temp(struct temperature_t *temp);
-void core_init_temp();
+void core_draw_adc(uint8_t lsb, uint8_t msb, uint8_t type, uint8_t ch);
+void core_draw_temp(struct temperature_t *temp, uint8_t sensor);
+void core_init();
 
 #endif
 

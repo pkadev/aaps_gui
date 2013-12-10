@@ -33,7 +33,7 @@ int main(void)
 
     curr_enc_pos = get_enc_pos();
 
-    core_init_temp();
+    core_init();
     /*
      * Read channel if from eeprom? Or say hello with type
      * of peripheral?
@@ -49,11 +49,13 @@ int main(void)
             {
                 if (ipc_pkt.cmd == IPC_CMD_PUT_DATA)
                 {
-                    struct temperature_t temp;
-                    temp.whole = ipc_pkt.data[0];
-                    temp.decimal = ipc_pkt.data[1];
+                    //struct temperature_t temp;
+                    //temp.whole = ipc_pkt.data[1];
+                    //temp.decimal = ipc_pkt.data[2];
 
-                    core_draw_temp(&temp);
+                    //core_draw_temp(&temp, ipc_pkt.data[0]);
+                    core_draw_adc(ipc_pkt.data[2], ipc_pkt.data[3],
+                                  ipc_pkt.data[0], ipc_pkt.data[1]);
                 }
                 ipc_reduce_pkts_pending(&ipc_pkt);
             }
