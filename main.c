@@ -65,6 +65,11 @@ int main(void)
                         core_draw_voltage(&ipc_pkt);
                         break;
                     }
+                    case IPC_CMD_DISPLAY_CURRENT:
+                    {
+                        core_draw_current(&ipc_pkt);
+                        break;
+                    }
                     default:
                        lcd_write_int(ipc_pkt.cmd);
                        lcd_write_string(" Unsupported command!");
@@ -76,34 +81,28 @@ int main(void)
         {
             /*TODO: Add error handling */
             lcd_write_string("IPC Error");
-            while(1);
         }
 
         /* Handle all other system events */
         if (enc_term_b_event)
         {
             term_b_event();
+            ipc_send_enc(IPC_DATA_ENC_CCW);
             enc_term_b_event = 0;
         }
 
         if (enc_term_a_event)
         {
             term_a_event();
+            ipc_send_enc(IPC_DATA_ENC_CW);
             enc_term_a_event = 0;
         }
 
         if (enc_btn_event)
         {
             btn_event();
-            ipc_send_enc(0xBEEF);
+            ipc_send_enc(IPC_DATA_ENC_BTN);
             enc_btn_event = 0;
-        }
-        uint16_t new_enc_pos = get_enc_pos();
-        if (curr_enc_pos != new_enc_pos)
-        {
-            curr_enc_pos = new_enc_pos;
-            ipc_send_enc(new_enc_pos);
-
         }
     }
     return 0; //Should never get here

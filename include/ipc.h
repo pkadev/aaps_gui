@@ -35,8 +35,10 @@ enum ipc_data_type_t
     IPC_DATA_CURRENT = 0x7C,
     IPC_DATA_ASCII = 0x7D,
     IPC_DATA_THERMO = 0x7E,
-    IPC_DATA_ENC = 0x7F,
-    IPC_DATA_DAC = 0x80,
+    IPC_DATA_ENC_CW = 0x7F,
+    IPC_DATA_ENC_CCW = 0x80,
+    IPC_DATA_ENC_BTN = 0x81,
+    IPC_DATA_DAC = 0x82,
 
 };
 
@@ -73,5 +75,5 @@ ipc_ret_t ipc_transfer();
 void ipc_reduce_pkts_pending(struct ipc_packet_t *pkt);
 
 /* TODO: Move to "business unit layer" ? */
-void ipc_send_enc(uint16_t enc_value);
+void ipc_send_enc(enum ipc_data_type_t type);
 #endif

@@ -252,12 +252,12 @@ end:
 }
 
 /* TODO: Move to "business unit layer" ? */
-void ipc_send_enc(uint16_t enc_value)
+void ipc_send_enc(enum ipc_data_type_t type)
 {
     /* TODO: Handle errors */
     struct ipc_packet_t pkt;
-    pkt.len = sizeof(enc_value) + IPC_PKT_OVERHEAD;
-    pkt.cmd = IPC_DATA_ENC;
+    pkt.len = 1 + IPC_PKT_OVERHEAD;
+    pkt.cmd = type;
     pkt.data = malloc(pkt.len - IPC_PKT_OVERHEAD);
 
     if (pkt.data == NULL)
@@ -266,10 +266,9 @@ void ipc_send_enc(uint16_t enc_value)
         return;
     }
 
-    pkt.data[0] = (enc_value >> 8);
-    pkt.data[1] = (enc_value & 0xff);
+    pkt.data[0] = 0; /* Not used */
 
-    pkt.crc = crc8(pkt.data, 2);
+    pkt.crc = crc8(pkt.data, 1);
 
     if (put_packet_in_tx_buf(&pkt) != AAPS_RET_OK)
     {

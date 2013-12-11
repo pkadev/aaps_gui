@@ -81,6 +81,23 @@ void core_draw_temp(struct temperature_t *temp, uint8_t sensor)
     itoa(temp->decimal, buf, 10);
     lcd_write_string(buf);
 }
+void core_draw_current(struct ipc_packet_t *pkt)
+{
+    uint16_t data = (pkt->data[2] << 8) | pkt->data[3];
+    lcd_set_cursor_pos(20);
+    if (pkt->data[1]  == 2)
+    {
+        lcd_write_uint(data);
+        if (data < 10000)
+            write_char(' ');
+        if (data < 1000)
+            write_char(' ');
+        if (data < 100)
+            write_char(' ');
+        if (data < 10)
+            write_char(' ');
+    }
+}
 void core_draw_voltage(struct ipc_packet_t *pkt)
 {
     uint16_t data = (pkt->data[2] << 8) | pkt->data[3];
@@ -92,36 +109,36 @@ void core_draw_voltage(struct ipc_packet_t *pkt)
         case 1:
         lcd_set_cursor_pos(64);
           break;
-        case 2:
-        lcd_set_cursor_pos(20);
-          break;
-        case 3:
-        lcd_set_cursor_pos(10);
-          break;
-        case 4:
-        lcd_set_cursor_pos(10);
-          break;
-        case 5:
-        lcd_set_cursor_pos(10);
-          break;
-        case 6:
-        lcd_set_cursor_pos(10);
-          break;
-        case 7:
-        lcd_set_cursor_pos(10);
-          break;
+       // case 2:
+       // //lcd_set_cursor_pos(20);
+       //   break;
+       // case 3:
+       // lcd_set_cursor_pos(10);
+       //   break;
+       // case 4:
+       // lcd_set_cursor_pos(10);
+       //   break;
+       // case 5:
+       // lcd_set_cursor_pos(10);
+       //   break;
+       // case 6:
+       // lcd_set_cursor_pos(10);
+       //   break;
+       // case 7:
+       // lcd_set_cursor_pos(10);
+       //   break;
     }
-    if (pkt->data[1] < 3 && pkt->data[1] >= 0)
+    if (pkt->data[1] < 2 && pkt->data[1] >= 0)
     {
         lcd_write_uint(data);
-        if (data < 10000)
-            write_char(' ');
-        if (data < 1000)
-            write_char(' ');
-        if (data < 100)
-            write_char(' ');
-        if (data < 10)
-            write_char(' ');
+       // if (data < 10000)
+       //     write_char(' ');
+       // if (data < 1000)
+       //     write_char(' ');
+       // if (data < 100)
+       //     write_char(' ');
+       // if (data < 10)
+       //     write_char(' ');
     }
 }
 /* TODO: Use ipc_packet as input parameter */
@@ -139,21 +156,21 @@ void core_draw_adc(uint8_t msb, uint8_t lsb, uint8_t type, uint8_t ch)
         case 2:
         lcd_set_cursor_pos(27);
           break;
-        case 3:
-        lcd_set_cursor_pos(10);
-          break;
-        case 4:
-        lcd_set_cursor_pos(10);
-          break;
-        case 5:
-        lcd_set_cursor_pos(10);
-          break;
-        case 6:
-        lcd_set_cursor_pos(10);
-          break;
-        case 7:
-        lcd_set_cursor_pos(10);
-          break;
+        //case 3:
+        //lcd_set_cursor_pos(10);
+        //  break;
+        //case 4:
+        //lcd_set_cursor_pos(10);
+        //  break;
+        //case 5:
+        //lcd_set_cursor_pos(10);
+        //  break;
+        //case 6:
+        //lcd_set_cursor_pos(10);
+        //  break;
+        //case 7:
+        //lcd_set_cursor_pos(10);
+        //  break;
     }
     if (ch < 3 && ch >= 0)
     {
