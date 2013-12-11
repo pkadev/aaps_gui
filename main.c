@@ -2,14 +2,12 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <string.h>
-#include "core.h"
 #include "m48_hal.h"
 #include "boot.h"
 #include "ipc.h"
 #include "cmd_exec.h"
 #include "enc.h"
 #include "lcd.h"
-#include "core.h"
 
 int main(void)
 {
@@ -20,7 +18,7 @@ int main(void)
 
     curr_enc_pos = get_enc_pos();
 
-    core_init();
+    //core_init();
     /*
      * Read channel if from eeprom? Or say hello with type
      * of peripheral?
@@ -36,18 +34,40 @@ int main(void)
         {
             if(packets_pending())
             {
-                lcd_set_cursor_pos(84);
+                lcd_set_cursor_pos(99);
                 utoa(pkt_cnt++, buf, 10);
                 lcd_write_string(buf);
-                if (ipc_pkt.cmd == IPC_CMD_PUT_DATA)
-                {
-                    //struct temperature_t temp;
-                    //temp.whole = ipc_pkt.data[1];
-                    //temp.decimal = ipc_pkt.data[2];
 
-                    //core_draw_temp(&temp, ipc_pkt.data[0]);
-                    core_draw_adc(ipc_pkt.data[2], ipc_pkt.data[3],
-                                  ipc_pkt.data[0], ipc_pkt.data[1]);
+                switch(ipc_pkt.cmd)
+                {
+                    case IPC_CMD_DISPLAY_THERMO:
+                    {
+                        //struct temperature_t temp;
+                        //temp.whole = ipc_pkt.data[1];
+                        //temp.decimal = ipc_pkt.data[2];
+
+                        //core_draw_temp(&temp, ipc_pkt.data[0]);
+                        break;
+                    }
+                    case IPC_CMD_DISPLAY_ADC:
+                    {
+                        core_draw_adc(ipc_pkt.data[2], ipc_pkt.data[3],
+                                      ipc_pkt.data[0], ipc_pkt.data[1]);
+                        break;
+                    }
+                    case IPC_CMD_DISPLAY_DAC:
+                    {
+                        core_draw_dac(&ipc_pkt);
+                        break;
+                    }
+                    case IPC_CMD_DISPLAY_VOLTAGE:
+                    {
+                        core_draw_voltage(&ipc_pkt);
+                        break;
+                    }
+                    default:
+                       lcd_write_int(ipc_pkt.cmd);
+                       lcd_write_string(" Unsupported command!");
                 }
                 ipc_reduce_pkts_pending(&ipc_pkt);
             }

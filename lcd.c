@@ -3,6 +3,7 @@
 #include <avr/interrupt.h>
 #include <stdlib.h>
 #include <util/atomic.h>
+#include "lcd.h"
 /*
  * aaps_g.c
  *
@@ -119,6 +120,7 @@ void write_char(char c)  //Write character to LCD (ASCII)
     _delay_us(100);
 }
 
+
 void lcd_write_string(char *str)
 {
     while(*str)
@@ -127,7 +129,19 @@ void lcd_write_string(char *str)
         str++;
     }
 }
+void lcd_write_int(int16_t integer)
+{
+    char tmp[10];
+    itoa(integer, tmp, 10);
+    lcd_write_string(tmp);
+}
 
+void lcd_write_uint(uint16_t uinteger)
+{
+    char tmp[10];
+    utoa(uinteger, tmp, 10);
+    lcd_write_string(tmp);
+}
 void lcd_init(void)
 {
     TIMING_DDR |= (1<<TIMING_BIT);

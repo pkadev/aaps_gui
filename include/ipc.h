@@ -25,7 +25,6 @@ enum ipc_command_t
     IPC_CMD_DISPLAY_VOLTAGE,
     IPC_CMD_DISPLAY_CURRENT,
     IPC_CMD_DISPLAY_THERMO,
-    IPC_CMD_DISPLAY_ADC,
     IPC_CMD_DISPLAY_DAC,
 };
 
@@ -37,6 +36,8 @@ enum ipc_data_type_t
     IPC_DATA_ASCII = 0x7D,
     IPC_DATA_THERMO = 0x7E,
     IPC_DATA_ENC = 0x7F,
+    IPC_DATA_DAC = 0x80,
+
 };
 
 struct ipc_packet_t
