@@ -5,109 +5,49 @@
 #include "enc.h"
 #include "ipc.h"
 
-
 uint8_t volatile enc_btn_event = 0;
+uint8_t volatile enc_longpress_event = 0;
 uint8_t volatile enc_term_a_event = 0;
 uint8_t volatile enc_term_b_event = 0;
 volatile uint8_t irq_event = 0;
-volatile uint16_t enc_pos = 0;
-static uint8_t btn_status = 0;
-uint16_t get_enc_pos(void)
-{
-    return enc_pos;
-}
-
-void btn_event(void)
-{
-    if ((PIND & (1 << PD1)) == 0)
-    {
-       /*
-        * TODO: Remove this and use timers to detect
-        * when the button is pushed. Also att electric
-        * debouncing on the button.
-        */
-        //_delay_ms(20);
-
-        if ((PIND & (1 << PD1)) == 0)
-        {
-            //print_ipc_int("[G] btn: ", btn_status);
-            switch(btn_status)
-            {
-                case 0:
-                    //enc_gled_on();
-                    btn_status = 1;
-                break;
-                case 1:
-                    //enc_rled_on();
-                    btn_status = 2;
-                break;
-                case 2:
-                    //enc_gled_off();
-                    btn_status = 3;
-                break;
-                case 3:
-                    //enc_gled_off();
-                    //enc_rled_off();
-                    btn_status = 0;
-                break;
-            }
-        }
-    }
-}
-
+static volatile uint8_t longpress_cnt = 0;
+static volatile uint8_t btn_cnt = 0;
+static volatile uint8_t btn_up = 1;
 ISR(PCINT2_vect)
 {
     if ((PIND & (1 << PD1)) == 0)
-        enc_btn_event = 1;
+            enc_btn_event = 1;
 }
 
-void term_a_event(void)
-{
-    if (((PIND & (1<<PD3)) == (1 << PD3)))
-    {
-        /* TODO: Remove delay */
-        //_delay_ms(40);
-        if (((PIND & (1<<PD3)) == (1 << PD3)))
-        {
-            if (btn_status == 1)
-                enc_pos += 10;
-            else if (btn_status == 2)
-                enc_pos += 50;
-            else if (btn_status == 3)
-                enc_pos += 100;
-            else
-                enc_pos++;
-            }
-    }
-}
 ISR(INT0_vect) /* Encoder TERM A */
 {
     if (((PIND & (1<<PD3)) == (1 << PD3)))
         enc_term_a_event = 1;
 }
-void term_b_event(void)
-{
-    if (((PIND & (1<<PD2)) == (1 << PD2)))
-    {
-        /* TODO: Remove delay */
-        //_delay_ms(40);
-        if (((PIND & (1<<PD2)) == (1 << PD2)))
-        {
-            if (btn_status == 1)
-               enc_pos-=10;
-            else if (btn_status == 2)
-                enc_pos -= 50;
-            else if (btn_status == 3)
-                enc_pos -= 100;
-            else
-               enc_pos--;
-        }
-    }
-}
 ISR(INT1_vect) /* Encoder TERM B */
 {
     if (((PIND & (1<<PD2)) == (1 << PD2)))
         enc_term_b_event = 1;
+}
+
+ISR(TIMER0_OVF_vect)
+{
+    if ((PIND & (1 << PD1)) == 0)
+    {
+        if (longpress_cnt++ > 60)
+        {
+            enc_longpress_event = 1;
+            longpress_cnt = 0;
+        }
+    }
+    else
+        longpress_cnt = 0;
+}
+
+void timer_init(void)
+{
+    TCCR0B |= (1 << CS02) | (1 << CS00);
+    TIMSK0 = (1<<TOIE0);
 }
 
 static void enable_ext_irq()
@@ -127,26 +67,27 @@ void enc_init(void)
 
     /* Enable external IRQ for encoder TERM-A and TERM-B. */
     enable_ext_irq();
-
+    timer_init();
 }
 
-void enc_rled_off(void)
+void enc_rled_ctrl(bool on)
 {
-    PORTB &= ~(1 << PB7);
+    if (on)
+        PORTB |= (1 << PB7);
+    else
+        PORTB &= ~(1 << PB7);
 }
-void enc_rled_on(void)
+
+void enc_gled_ctrl(bool on)
 {
-    PORTB |= (1 << PB7);
+    if (on)
+        PORTB |= (1 << PB6);
+    else
+        PORTB &= ~(1 << PB6);
 }
-void enc_rled_toggle(void)
+
+void enc_yled_ctrl(bool on)
 {
-    PORTB ^= (1 << PB7);
-}
-void enc_gled_off(void)
-{
-    PORTB &= ~(1 << PB6);
-}
-void enc_gled_on(void)
-{
-    PORTB |= (1 << PB6);
+    enc_gled_ctrl(on);
+    enc_rled_ctrl(on);
 }

@@ -1,38 +1,55 @@
 #include "cmd_exec.h"
 #include "m48_hal.h"
 #include "lcd.h"
-
+#include "enc.h"
 #define THERMO_SENSOR_0     0x00
 #define THERMO_SENSOR_1     0x01
 
-void core_init()
+void core_init_page(uint8_t page)
 {
-    lcd_set_cursor_pos(0);
-    lcd_write_string("Tc: ");
-    lcd_set_cursor_pos(64);
-    lcd_write_string("T0: ");
-    lcd_set_cursor_pos(20);
-    lcd_write_string("T1: ");
+    if (page == 1)
+    {
+        //core_draw_ilimit(0);
+        lcd_set_cursor_pos(0);
+        lcd_write_string("       A");
+        lcd_set_cursor_pos(71);
+        write_char('V');
+        lcd_set_cursor_pos(27);
+        write_char('V');
+    }
+    else if (page == 2)
+    {
+        lcd_set_cursor_pos(0);
+        lcd_write_string("Q1   C     W CB  AM");
+        lcd_set_cursor_pos(64);
+        lcd_write_string("Q2   C     W");
+        lcd_set_cursor_pos(20);
+        lcd_write_string("R2   C     W");
+        lcd_set_cursor_pos(84);
+        lcd_write_string("RS   C     W");
+    }
 }
-aaps_result_t cmd_exec_ctrl_relay(struct ipc_packet_t *packet,
-                                  uint8_t relay_id)
-{
-    if (relay_id == RELAY_D_ID)
-    {
-        if (packet->data[1])
-            ;//RELAY_D_SET();
-        else
-            ;//RELAY_D_CLR();
-    }
-    else if (relay_id == RELAY_ID)
-    {
-        if (packet->data[1])
-            ;//RELAY_SET();
-        else
-            ;//RELAY_CLR();
-    }
 
-    return AAPS_RET_OK;
+void core_led_ctrl(struct ipc_packet_t *pkt)
+{
+    switch(pkt->data[0])
+    {
+        case IPC_LED_GREEN:
+            enc_gled_ctrl(pkt->data[1]);
+          break;
+        case IPC_LED_YELLOW:
+            enc_yled_ctrl(pkt->data[1]);
+          break;
+        case IPC_LED_RED:
+            enc_rled_ctrl(pkt->data[1]);
+          break;
+
+    }
+}
+void core_draw_ilimit(struct ipc_packet_t *pkt)
+{
+        lcd_set_cursor_pos(13);
+        write_char(0xff);
 }
 
 void core_draw_dac(struct ipc_packet_t *pkt)
@@ -50,42 +67,54 @@ void core_draw_dac(struct ipc_packet_t *pkt)
     lcd_write_uint(data);
     if (data < 10000)
         write_char(' ');
-    if (data < 1000)
-        lcd_write_string("  ");
-    if (data < 100)
-        lcd_write_string("    ");
-    if (data < 10)
-        lcd_write_string("     ");
+    else if (data < 1000)
+        lcd_write_string(" ");
+    else if (data < 100)
+        lcd_write_string(" ");
+    else if (data < 10)
+        lcd_write_string(" ");
 }
 
 
 void core_draw_temp(struct temperature_t *temp, uint8_t sensor)
 {
-    char buf[10];
-    itoa(temp->whole, buf, 10);
-
     switch (sensor)
     {
         case 0:
-            lcd_set_cursor_pos(3);
+            /* T1 for Ambient */
+            lcd_set_cursor_pos(81);
             break;
         case 1:
+            /* T2 for Q1 Power transistor */
             lcd_set_cursor_pos(67);
             break;
         case 2:
+            /* T3 for Q2 Power transistor */
             lcd_set_cursor_pos(23);
             break;
+        case 3:
+            /* T4 for R22 emitter resistor */
+            lcd_set_cursor_pos(87);
+            break;
+        case 4:
+            /* T5 for Rs current sense resistor */
+            lcd_set_cursor_pos(95);
+            break;
+        case 5:
+            /* T6 for circuit board */
+            lcd_set_cursor_pos(77);
+            break;
     }
-    lcd_write_string(buf);
-    lcd_write_string(".");
-    itoa(temp->decimal, buf, 10);
-    lcd_write_string(buf);
+    lcd_write_uint(temp->whole);
+    //lcd_write_string(".");
+    //lcd_write_uint(temp->decimal);
 }
+
 void core_draw_current(struct ipc_packet_t *pkt)
 {
     uint16_t data = (pkt->data[2] << 8) | pkt->data[3];
-    lcd_set_cursor_pos(20);
-    if (pkt->data[1]  == 2)
+    lcd_set_cursor_pos(0);
+    if (pkt->data[1] == 2)
     {
         lcd_write_uint(data);
         if (data < 10000)
@@ -104,7 +133,7 @@ void core_draw_voltage(struct ipc_packet_t *pkt)
     switch(pkt->data[1])
     {
         case 0:
-        lcd_set_cursor_pos(0);
+        lcd_set_cursor_pos(20);
           break;
         case 1:
         lcd_set_cursor_pos(64);
@@ -131,14 +160,15 @@ void core_draw_voltage(struct ipc_packet_t *pkt)
     if (pkt->data[1] < 2 && pkt->data[1] >= 0)
     {
         lcd_write_uint(data);
-       // if (data < 10000)
-       //     write_char(' ');
-       // if (data < 1000)
-       //     write_char(' ');
-       // if (data < 100)
-       //     write_char(' ');
-       // if (data < 10)
-       //     write_char(' ');
+        if (data < 10000)
+            write_char(' ');
+        if (data < 1000)
+            write_char(' ');
+        if (data < 100)
+            write_char(' ');
+        if (data < 10)
+            write_char(' ');
+
     }
 }
 /* TODO: Use ipc_packet as input parameter */
@@ -148,13 +178,13 @@ void core_draw_adc(uint8_t msb, uint8_t lsb, uint8_t type, uint8_t ch)
     switch(ch)
     {
         case 0:
-        lcd_set_cursor_pos(7);
+        lcd_set_cursor_pos(28);
           break;
         case 1:
-        lcd_set_cursor_pos(71);
+        lcd_set_cursor_pos(72);
           break;
         case 2:
-        lcd_set_cursor_pos(27);
+        lcd_set_cursor_pos(8);
           break;
         //case 3:
         //lcd_set_cursor_pos(10);
