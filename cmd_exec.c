@@ -16,6 +16,8 @@ void core_init_page(uint8_t page)
         write_char('V');
         lcd_set_cursor_pos(27);
         write_char('V');
+        lcd_set_cursor_pos(91);
+        write_char('V');
     }
     else if (page == 2)
     {
@@ -112,11 +114,18 @@ void core_draw_temp(struct temperature_t *temp, uint8_t sensor)
 
 void core_draw_current(struct ipc_packet_t *pkt)
 {
-    uint16_t data = (pkt->data[2] << 8) | pkt->data[3];
+
+    uint32_t data = (uint32_t)pkt->data[4] << 16;
+    uint16_t add = (pkt->data[2] << 8) | pkt->data[3];
+    data += add;
     lcd_set_cursor_pos(0);
     if (pkt->data[1] == 2)
     {
-        lcd_write_uint(data);
+        lcd_write_luint(data);
+        if (data < 1000000)
+            write_char(' ');
+        if (data < 100000)
+            write_char(' ');
         if (data < 10000)
             write_char(' ');
         if (data < 1000)
@@ -129,7 +138,10 @@ void core_draw_current(struct ipc_packet_t *pkt)
 }
 void core_draw_voltage(struct ipc_packet_t *pkt)
 {
-    uint16_t data = (pkt->data[2] << 8) | pkt->data[3];
+    uint32_t data = (uint32_t)pkt->data[4] << 16;
+    uint16_t add = (pkt->data[3] << 8) | pkt->data[2];
+    data += add;
+
     switch(pkt->data[1])
     {
         case 0:
@@ -141,9 +153,9 @@ void core_draw_voltage(struct ipc_packet_t *pkt)
        // case 2:
        // //lcd_set_cursor_pos(20);
        //   break;
-       // case 3:
-       // lcd_set_cursor_pos(10);
-       //   break;
+        case 3:
+            lcd_set_cursor_pos(84);
+          break;
        // case 4:
        // lcd_set_cursor_pos(10);
        //   break;
@@ -157,9 +169,13 @@ void core_draw_voltage(struct ipc_packet_t *pkt)
        // lcd_set_cursor_pos(10);
        //   break;
     }
-    if (pkt->data[1] < 2 && pkt->data[1] >= 0)
+    if (pkt->data[1] == 0 || pkt->data[1] == 1 || pkt->data[1] == 3)
     {
-        lcd_write_uint(data);
+        lcd_write_luint(data);
+        if (data < 1000000)
+            write_char(' ');
+        if (data < 100000)
+            write_char(' ');
         if (data < 10000)
             write_char(' ');
         if (data < 1000)
@@ -168,7 +184,6 @@ void core_draw_voltage(struct ipc_packet_t *pkt)
             write_char(' ');
         if (data < 10)
             write_char(' ');
-
     }
 }
 /* TODO: Use ipc_packet as input parameter */
@@ -178,17 +193,17 @@ void core_draw_adc(uint8_t msb, uint8_t lsb, uint8_t type, uint8_t ch)
     switch(ch)
     {
         case 0:
-        lcd_set_cursor_pos(28);
+            lcd_set_cursor_pos(28);
           break;
         case 1:
-        lcd_set_cursor_pos(72);
+            lcd_set_cursor_pos(72);
           break;
         case 2:
-        lcd_set_cursor_pos(8);
+            lcd_set_cursor_pos(8);
           break;
-        //case 3:
-        //lcd_set_cursor_pos(10);
-        //  break;
+        case 3:
+            lcd_set_cursor_pos(92);
+          break;
         //case 4:
         //lcd_set_cursor_pos(10);
         //  break;
@@ -202,7 +217,7 @@ void core_draw_adc(uint8_t msb, uint8_t lsb, uint8_t type, uint8_t ch)
         //lcd_set_cursor_pos(10);
         //  break;
     }
-    if (ch < 3 && ch >= 0)
+    if (ch <= 3 && ch >= 0)
     {
         uint16_t data = msb << 8 | lsb;
         utoa(data, buf, 10);

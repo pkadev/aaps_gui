@@ -136,9 +136,15 @@ void lcd_write_int(int16_t integer)
     lcd_write_string(tmp);
 }
 
+void lcd_write_luint(uint32_t uinteger)
+{
+    char tmp[26];
+    ultoa(uinteger, tmp, 10);
+    lcd_write_string(tmp);
+}
 void lcd_write_uint(uint16_t uinteger)
 {
-    char tmp[10];
+    char tmp[16];
     utoa(uinteger, tmp, 10);
     lcd_write_string(tmp);
 }
