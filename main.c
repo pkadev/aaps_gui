@@ -9,7 +9,7 @@
 #include "enc.h"
 #include "lcd.h"
 
-static uint8_t page = 1;
+static uint8_t page = 2;
 static void display_chg_page()
 {
     lcd_clr_disp();
@@ -27,6 +27,12 @@ int main(void)
     if (boot() != AAPS_RET_OK)
         boot_failed();
 
+    DDRD &= ~(1<<PD0); /* PD0 Input */
+    PORTD |= (1<<PD0); /* Enable pull-up */
+
+    DDRC &= ~(1<<PC5);
+    PORTC |= (1<<PC5);
+
     core_init_page(page);
     /*
      * Read channel if from eeprom? Or say hello with type
@@ -34,8 +40,6 @@ int main(void)
      */
     //ipc_print_str("[G] Hi from GUI\n";
     struct ipc_packet_t ipc_pkt;
-    //uint16_t pkt_cnt = 0;
-    //char buf[10];
     ipc_ret_t result;
     while(1)
     {
@@ -46,11 +50,6 @@ int main(void)
         {
             if(packets_pending())
             {
-                /* Packet counter */
-                //lcd_set_cursor_pos(99);
-                //utoa(pkt_cnt++, buf, 10);
-                //lcd_write_string(buf);
-
                 switch(ipc_pkt.cmd)
                 {
                     case IPC_CMD_DISPLAY_THERMO:
@@ -114,6 +113,20 @@ int main(void)
             lcd_write_string("IPC Error ");
             lcd_write_uint(result);
         }
+        /* SW0 */
+        if (enc_sw0_event)
+        {
+            while((PINC & (1<<PC5)) == 0);
+            ipc_send_enc(IPC_DATA_ENC_SW0);
+            display_chg_page();
+            enc_sw0_event = 0;
+        }
+        if (enc_sw2_event)
+        {
+            while((PIND & (1<<PD0)) == 0);
+            ipc_send_enc(IPC_DATA_ENC_SW2);
+            enc_sw2_event = 0;
+        }
 
         /* Handle all other system events */
         if (enc_term_b_event)
@@ -137,7 +150,7 @@ int main(void)
         if (enc_btn_event && ((PIND & (1 << PD1)) == (1<<PD1)))
         {
             ipc_send_enc(IPC_DATA_ENC_BTN);
-            display_chg_page();
+            if (0) display_chg_page();
             enc_btn_event = 0;
         }
     }

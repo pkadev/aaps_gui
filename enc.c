@@ -5,6 +5,8 @@
 #include "enc.h"
 #include "ipc.h"
 
+uint8_t volatile enc_sw0_event = 0;
+uint8_t volatile enc_sw2_event = 0;
 uint8_t volatile enc_btn_event = 0;
 uint8_t volatile enc_longpress_event = 0;
 uint8_t volatile enc_term_a_event = 0;
@@ -32,6 +34,12 @@ ISR(INT1_vect) /* Encoder TERM B */
 
 ISR(TIMER0_OVF_vect)
 {
+    if ((PINC & (1<<PC5)) == 0)
+        enc_sw0_event = 1;
+
+    if ((PIND & (1<<PD0)) == 0)
+        enc_sw2_event = 1;
+
     if ((PIND & (1 << PD1)) == 0)
     {
         if (longpress_cnt++ > 60)

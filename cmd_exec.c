@@ -50,31 +50,44 @@ void core_led_ctrl(struct ipc_packet_t *pkt)
 }
 void core_draw_ilimit(struct ipc_packet_t *pkt)
 {
-        lcd_set_cursor_pos(13);
-        write_char(0xff);
+    /* Add on/off */
+    lcd_set_cursor_pos(13);
+    write_char(0xff);
 }
 
 void core_draw_dac(struct ipc_packet_t *pkt)
 {
-    uint16_t data = (pkt->data[1] << 8) | pkt->data[2];
+    uint32_t data = (uint32_t)pkt->data[4] << 24 | (uint32_t)pkt->data[3] << 16;
+    uint16_t add = (pkt->data[2] << 8) | pkt->data[1];
+    data += add;
+
+
     switch(pkt->data[0])
     {
         case IPC_DATA_CURRENT:
-        lcd_set_cursor_pos(14);
+            if (data > 999999)
+                data /= 10;
+            lcd_set_cursor_pos(14);
           break;
         case IPC_DATA_VOLTAGE:
+            if (data > 9999999)
+                data /= 10;
+            if (data > 999999)
+                data /= 10;
         lcd_set_cursor_pos(78);
           break;
     }
-    lcd_write_uint(data);
+    lcd_write_luint(data);
+    if (data < 100000)
+        write_char(' ');
     if (data < 10000)
         write_char(' ');
-    else if (data < 1000)
-        lcd_write_string(" ");
-    else if (data < 100)
-        lcd_write_string(" ");
-    else if (data < 10)
-        lcd_write_string(" ");
+    if (data < 1000)
+        write_char(' ');
+    if (data < 100)
+        write_char(' ');
+    if (data < 10)
+        write_char(' ');
 }
 
 
