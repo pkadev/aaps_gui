@@ -150,7 +150,8 @@ void lcd_write_uint(uint16_t uinteger)
 }
 void lcd_init(void)
 {
-    TIMING_DDR |= (1<<TIMING_BIT);
+    LCD_BACK_ON();
+	TIMING_DDR |= (1<<TIMING_BIT);
     TIMING_HIGH();
     //init LCD
     LCD_DDR |= (1<<LCD_DB7) | (1<<LCD_DB6) | (1<<LCD_DB5) | (1<<LCD_DB4);
