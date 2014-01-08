@@ -114,6 +114,9 @@
     <Compile Include="cmd_exec.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="crc8.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="enc.c">
       <SubType>compile</SubType>
     </Compile>
