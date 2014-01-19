@@ -2,8 +2,6 @@
 #include "m48_hal.h"
 #include "lcd.h"
 #include "enc.h"
-#define THERMO_SENSOR_0     0x00
-#define THERMO_SENSOR_1     0x01
 
 void core_init_page(uint8_t page)
 {

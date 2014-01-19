@@ -13,5 +13,6 @@ void core_draw_voltage(struct ipc_packet_t *pkt);
 void core_draw_dac(struct ipc_packet_t *pkt);
 void core_draw_ilimit(struct ipc_packet_t *pkt);
 void core_led_ctrl(struct ipc_packet_t *pkt);
+aaps_result_t core_send_periph_info(void);
 
 #endif

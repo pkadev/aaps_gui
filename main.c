@@ -35,7 +35,7 @@ int main(void)
 
     core_init_page(page);
     /*
-     * Read channel if from eeprom? Or say hello with type
+     * Read channel id from eeprom? Or say hello with type
      * of peripheral?
      */
     //ipc_print_str("[G] Hi from GUI\n";
@@ -52,6 +52,11 @@ int main(void)
             {
                 switch(ipc_pkt.cmd)
                 {
+                    case IPC_CMD_PERIPH_DETECT:
+                    {
+                        core_send_periph_info();
+                        break;
+                    }
                     case IPC_CMD_DISPLAY_THERMO:
                     {
                         if (page == 2)
