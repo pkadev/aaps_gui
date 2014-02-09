@@ -200,7 +200,7 @@ void lcd_init(void)
     */
 
     //5th byte
-    lcd_write4(0x48);
+    lcd_write4(0x28);
     _delay_ms(1);
 
     //6th byte (Display off, cursor off, blink off)
