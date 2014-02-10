@@ -94,28 +94,28 @@ void core_draw_temp(struct temperature_t *temp, uint8_t sensor)
     switch (sensor)
     {
         case 0:
-            /* T1 for Ambient */
-            lcd_set_cursor_pos(81);
+            /* T3 for Q2 Power transistor*/
+            lcd_set_cursor_pos(67);
             break;
         case 1:
             /* T2 for Q1 Power transistor */
-            lcd_set_cursor_pos(67);
+            lcd_set_cursor_pos(3);
             break;
         case 2:
-            /* T3 for Q2 Power transistor */
+            /* T4 for R22 Power transistor */
             lcd_set_cursor_pos(23);
             break;
         case 3:
-            /* T4 for R22 emitter resistor */
+            /* T5 for RS current sense resistor */
             lcd_set_cursor_pos(87);
             break;
         case 4:
-            /* T5 for Rs current sense resistor */
-            lcd_set_cursor_pos(95);
+            /* T6 for CB current sense resistor */
+            lcd_set_cursor_pos(77);
             break;
         case 5:
-            /* T6 for circuit board */
-            lcd_set_cursor_pos(77);
+            /* T1 for ambient on AAPS_D */
+            lcd_set_cursor_pos(81);
             break;
     }
     lcd_write_uint(temp->whole);
