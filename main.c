@@ -44,7 +44,6 @@ int main(void)
     while(1)
     {
         /* Handle IPC traffic */
-
         result = ipc_transfer(&ipc_pkt);
         if (result == IPC_RET_OK)
         {
@@ -123,7 +122,6 @@ int main(void)
         {
             while((PINC & (1<<PC5)) == 0);
             ipc_send_enc(IPC_DATA_ENC_SW0);
-            display_chg_page();
             enc_sw0_event = 0;
         }
         if (enc_sw2_event)
@@ -152,11 +150,29 @@ int main(void)
             enc_longpress_event = 0;
             enc_btn_event = 0;
         }
+        bool double_click = 0;
         if (enc_btn_event && ((PIND & (1 << PD1)) == (1<<PD1)))
         {
-            ipc_send_enc(IPC_DATA_ENC_BTN);
-            if (0) display_chg_page();
+            if (enc_db_click == 1)
+            {
+                ipc_send_enc(IPC_DATA_ENC_DB_BTN);
+                display_chg_page();
+                enc_db_click = 2;
+                double_click = 1;
+                stop_db_click_timer();
+            }
+            if (!double_click)
+                start_db_click_timer();
             enc_btn_event = 0;
+        }
+        if (enc_db_click == 2)
+        {
+            if (!double_click)
+            {
+                ipc_send_enc(IPC_DATA_ENC_BTN);
+            }
+            stop_db_click_timer();
+            enc_db_click = 0;
         }
     }
     return 0; //Should never get here

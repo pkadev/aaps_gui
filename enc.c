@@ -9,6 +9,7 @@ uint8_t volatile enc_sw0_event = 0;
 uint8_t volatile enc_sw2_event = 0;
 uint8_t volatile enc_btn_event = 0;
 uint8_t volatile enc_longpress_event = 0;
+uint8_t volatile enc_db_click = 0;
 uint8_t volatile enc_term_a_event = 0;
 uint8_t volatile enc_term_b_event = 0;
 volatile uint8_t irq_event = 0;
@@ -31,6 +32,10 @@ ISR(INT1_vect) /* Encoder TERM B */
     if (((PIND & (1<<PD2)) == (1 << PD2)))
         enc_term_b_event = 1;
 }
+ISR(TIMER1_OVF_vect)
+{
+	enc_db_click = 2;
+}
 
 ISR(TIMER0_OVF_vect)
 {
@@ -52,10 +57,24 @@ ISR(TIMER0_OVF_vect)
         longpress_cnt = 0;
 }
 
+void start_db_click_timer(void)
+{
+    TCCR1B |= (1 << CS12);
+	TCNT1H = 220; /* This is a good double click timeout */
+	TCNT1L = 0;
+	enc_db_click = 1;
+}
+void stop_db_click_timer(void)
+{
+	TCCR1B = 0;
+	enc_db_click = 0;
+}
+
 void timer_init(void)
 {
     TCCR0B |= (1 << CS02) | (1 << CS00);
     TIMSK0 = (1<<TOIE0);
+    TIMSK1 = (1<<TOIE1);
 }
 
 static void enable_ext_irq()

@@ -15,10 +15,14 @@ void enc_gled_ctrl(bool on);
 void enc_yled_ctrl(bool on);
 void enc_rled_ctrl(bool on);
 
+void start_db_click_timer(void);
+void stop_db_click_timer(void);
+
 extern uint8_t volatile enc_sw0_event;
 extern uint8_t volatile enc_sw2_event;
 extern uint8_t volatile enc_btn_event;
 extern uint8_t volatile enc_term_a_event;
 extern uint8_t volatile enc_term_b_event;
 extern uint8_t volatile enc_longpress_event;
+extern uint8_t volatile enc_db_click;
 #endif
