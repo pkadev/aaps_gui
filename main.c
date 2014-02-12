@@ -129,7 +129,7 @@ int main(void)
         if (enc_sw1_event)
         {
             while((PIND & (1<<PD0)) == 0);
-            ipc_send_enc(IPC_DATA_ENC_SW2);
+            ipc_send_enc(IPC_DATA_ENC_SW1);
             enc_sw1_event = 0;
         }
 
