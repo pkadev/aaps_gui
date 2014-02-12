@@ -114,7 +114,8 @@ int main(void)
         else
         {
             /*TODO: Add error handling */
-            lcd_write_string("IPC Error ");
+            lcd_set_cursor_pos(98);
+            lcd_write_string("IE ");
             lcd_write_uint(result);
         }
         /* SW0 */
