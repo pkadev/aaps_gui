@@ -27,11 +27,14 @@ int main(void)
     if (boot() != AAPS_RET_OK)
         boot_failed();
 
-    DDRD &= ~(1<<PD0); /* PD0 Input */
-    PORTD |= (1<<PD0); /* Enable pull-up */
+    //DDRD &= ~(1<<PD0); /* PD0 Input */
+    //PORTD |= (1<<PD0); /* Enable pull-up */
 
     DDRC &= ~(1<<PC5);
     PORTC |= (1<<PC5);
+
+    DDRC &= ~(1<<PC4);
+    PORTC |= (1<<PC4);
 
     core_init_page(page);
     /*
@@ -128,7 +131,7 @@ int main(void)
         }
         if (enc_sw1_event)
         {
-            while((PIND & (1<<PD0)) == 0);
+            while((PINC & (1<<PC4)) == 0);
             ipc_send_enc(IPC_DATA_ENC_SW1);
             enc_sw1_event = 0;
         }
