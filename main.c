@@ -122,13 +122,14 @@ int main(void)
         {
             while((PINC & (1<<PC5)) == 0);
             ipc_send_enc(IPC_DATA_ENC_SW0);
+            display_chg_page();
             enc_sw0_event = 0;
         }
-        if (enc_sw2_event)
+        if (enc_sw1_event)
         {
             while((PIND & (1<<PD0)) == 0);
             ipc_send_enc(IPC_DATA_ENC_SW2);
-            enc_sw2_event = 0;
+            enc_sw1_event = 0;
         }
 
         /* Handle all other system events */
@@ -156,7 +157,7 @@ int main(void)
             if (enc_db_click == 1)
             {
                 ipc_send_enc(IPC_DATA_ENC_DB_BTN);
-                display_chg_page();
+                
                 enc_db_click = 2;
                 double_click = 1;
                 stop_db_click_timer();

@@ -19,7 +19,7 @@ void start_db_click_timer(void);
 void stop_db_click_timer(void);
 
 extern uint8_t volatile enc_sw0_event;
-extern uint8_t volatile enc_sw2_event;
+extern uint8_t volatile enc_sw1_event;
 extern uint8_t volatile enc_btn_event;
 extern uint8_t volatile enc_term_a_event;
 extern uint8_t volatile enc_term_b_event;

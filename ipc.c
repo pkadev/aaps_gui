@@ -1,4 +1,5 @@
 #include <avr/interrupt.h>
+#include <util/atomic.h>
 #include <avr/io.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -215,8 +216,11 @@ ipc_ret_t ipc_transfer(struct ipc_packet_t *pkt)
 
             if (misc == SPDR_INV(IPC_PUT_BYTE))
             {
-                /* Master puts data */
-                misc = ipc_receive(pkt);
+                ATOMIC_BLOCK(ATOMIC_FORCEON)
+                {
+                    /* Master puts data */
+                    misc = ipc_receive(pkt);
+                }
                 if (misc == IPC_RET_OK)
                 {
                     pkts_pending++;
