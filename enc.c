@@ -40,10 +40,14 @@ ISR(TIMER1_OVF_vect)
 ISR(TIMER0_OVF_vect)
 {
     if ((PINC & (1<<PC5)) == 0)
-        enc_sw0_event = 1;
+        enc_sw0_event++;
+    else
+        enc_sw0_event = 0;
 
     if ((PINC & (1<<PC4)) == 0)
-        enc_sw1_event = 1;
+        enc_sw1_event++;
+    else
+        enc_sw1_event = 0;
 
     if ((PIND & (1 << PD1)) == 0)
     {

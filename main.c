@@ -122,18 +122,52 @@ int main(void)
             lcd_write_uint(result);
         }
         /* SW0 */
+	    static bool sw0_lp_active = false;
+	    static bool sw1_lp_active = false;
         if (enc_sw0_event)
         {
-            while((PINC & (1<<PC5)) == 0);
-            ipc_send_enc(IPC_DATA_ENC_SW0);
-            display_chg_page();
-            enc_sw0_event = 0;
+	        if ((PINC & (1<<PC5)) == 0)
+            {
+                _delay_ms(1);
+	            if (enc_sw0_event && (PINC & (1<<PC5)))
+	            {
+		            if (!sw0_lp_active)
+	                {
+                        ipc_send_enc(IPC_DATA_ENC_SW0);
+                        display_chg_page();
+		                enc_sw0_event = 0;
+		            }
+		            sw0_lp_active = false;
+                }
+            }
+            if (enc_sw0_event > 50)
+	        {
+                ipc_send_enc(IPC_DATA_ENC_SW0_LONGPRESS);
+                enc_sw0_event = 0;
+		        sw0_lp_active = true;
+	        }
         }
         if (enc_sw1_event)
         {
-            while((PINC & (1<<PC4)) == 0);
-            ipc_send_enc(IPC_DATA_ENC_SW1);
-            enc_sw1_event = 0;
+	        if ((PINC & (1<<PC4)) == 0)
+            {
+                _delay_ms(1);
+	            if (enc_sw1_event && (PINC & (1<<PC4)))
+	            {
+		            if (!sw1_lp_active)
+	                {
+                        ipc_send_enc(IPC_DATA_ENC_SW1);
+		                enc_sw0_event = 0;
+		            }
+		            sw1_lp_active = false;
+                }
+            }
+            if (enc_sw1_event > 50)
+	        {
+                ipc_send_enc(IPC_DATA_ENC_SW1_LONGPRESS);
+                enc_sw1_event = 0;
+		        sw1_lp_active = true;
+	        }
         }
 
         /* Handle all other system events */
