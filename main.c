@@ -120,6 +120,18 @@ int main(void)
             lcd_set_cursor_pos(98);
             lcd_write_string("IE ");
             lcd_write_uint(result);
+            if (result == IPC_RET_ERROR_OUT_OF_MEMORY)
+            {
+                enc_rled_ctrl(0);
+                enc_gled_ctrl(0);
+                for(;;)
+                {
+                    enc_yled_ctrl(1);
+                    _delay_ms(50);
+                    enc_yled_ctrl(0);
+                    _delay_ms(50);
+                }
+            }
         }
         /* SW0 */
 	    static bool sw0_lp_active = false;
