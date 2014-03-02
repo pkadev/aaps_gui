@@ -11,6 +11,7 @@ void core_init_page(uint8_t page);
 void core_draw_current(struct ipc_packet_t *pkt);
 void core_draw_voltage(struct ipc_packet_t *pkt);
 void core_draw_dac(struct ipc_packet_t *pkt);
+void core_draw_power(struct ipc_packet_t *pkt);
 void core_draw_ilimit(struct ipc_packet_t *pkt);
 void core_led_ctrl(struct ipc_packet_t *pkt);
 aaps_result_t core_send_periph_info(void);

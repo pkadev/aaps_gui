@@ -26,7 +26,7 @@ void core_init_page(uint8_t page)
         lcd_set_cursor_pos(20);
         lcd_write_string("R2   C     W");
         lcd_set_cursor_pos(84);
-        lcd_write_string("RS   C     W");
+        lcd_write_string("RS   C     W     W");
     }
 }
 
@@ -175,4 +175,35 @@ void core_draw_adc(uint8_t msb, uint8_t lsb, uint8_t type, uint8_t ch)
         uint16_t data = msb << 8 | lsb;
         lcd_write_luint_r(data, lcd_pos, 5);
     }
+}
+
+void core_draw_power(struct ipc_packet_t *pkt)
+{
+    uint8_t lcd_pos = 0;
+    uint8_t ch = pkt->data[0];
+    uint32_t data = (uint32_t)pkt->data[3] << 16;
+    uint16_t add = (pkt->data[2] << 8) | pkt->data[1];
+    data += add;
+    while (data > 99999)
+        data /= 10;
+
+    switch(ch)
+    {
+        case 0:
+           lcd_pos = 6;
+          break;
+        case 1:
+            lcd_pos = 70;
+          break;
+        case 2:
+            lcd_pos = 26;
+          break;
+        case 3:
+            lcd_pos = 90;
+          break;
+        case 4:
+            lcd_pos = 96;
+          break;
+    }
+    lcd_write_luint_r(data, lcd_pos, 5);
 }

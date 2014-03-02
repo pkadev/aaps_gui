@@ -98,8 +98,8 @@ int main(void)
                     }
                     case IPC_CMD_DISPLAY_POWER:
                     {
-                        if (page == 1)
-                            core_draw_current(&ipc_pkt);
+                        if (page == 2)
+                            core_draw_power(&ipc_pkt);
                         break;
                     }
                     case IPC_CMD_SET_LED:
@@ -117,9 +117,9 @@ int main(void)
         else
         {
             /*TODO: Add error handling */
-            lcd_set_cursor_pos(98);
-            lcd_write_string("IE ");
-            lcd_write_uint(result);
+            //lcd_set_cursor_pos(98);
+            //lcd_write_string("IE ");
+            //lcd_write_uint(result);
             if (result == IPC_RET_ERROR_OUT_OF_MEMORY)
             {
                 enc_rled_ctrl(0);

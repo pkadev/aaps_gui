@@ -139,13 +139,12 @@ void lcd_write_int(int16_t integer)
 
 void lcd_write_luint_r(uint32_t uinteger, uint8_t pos, uint8_t width)
 {
-    char tmp[10];
+    char tmp[20];
     char container[width];
-    uint8_t container_len = sizeof(container);
     ultoa(uinteger, tmp, 10);
     uint8_t chars = strlen(tmp);
     memset(container, ' ' , width);
-    memcpy(container + container_len - chars, tmp, chars+1);
+    memcpy(container + width - chars, tmp, chars+1);
     lcd_set_cursor_pos(pos);
     lcd_write_string(container);
 }
