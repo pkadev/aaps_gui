@@ -59,6 +59,15 @@ int main(void)
                         core_send_periph_info();
                         break;
                     }
+                    case IPC_CMD_DISPLAY_SCALE:
+                    {
+                        if (page == 1)
+                        {
+                            core_draw_scale(ipc_pkt.data[0] << 8 | ipc_pkt.data[1]);
+                            core_draw_input(ipc_pkt.data[2]);
+                        }
+                        break;
+                    }
                     case IPC_CMD_DISPLAY_THERMO:
                     {
                         if (page == 2)

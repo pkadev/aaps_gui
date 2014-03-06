@@ -80,6 +80,18 @@ void core_draw_dac(struct ipc_packet_t *pkt)
     lcd_write_luint_r(data, lcd_pos, 6);
 }
 
+void core_draw_scale(uint16_t scale)
+{
+    lcd_write_luint_r(scale, 101, 3);
+}
+
+void core_draw_input(uint8_t input)
+{
+    char inp;
+    inp = input ? 'V' : 'A';
+    lcd_set_cursor_pos(38);
+    write_char(inp);
+}
 void core_draw_temp(struct temperature_t *temp, uint8_t sensor)
 {
     switch (sensor)
